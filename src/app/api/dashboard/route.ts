@@ -77,7 +77,10 @@ export async function GET() {
       },
     });
     const expiredKnowledge = await prisma.knowledgeItem.count({
-      where: { expiryDate: { lt: new Date() } },
+      where: {
+        approvalStatus: ApprovalStatus.APPROVED,
+        expiryDate: { lt: new Date() },
+      },
     });
 
     // 4. Creator briefs & submissions

@@ -24,7 +24,10 @@ describe("Inkloom AI — Zero Mock Data Enforcement Sprint Verification", () => 
       },
     });
     const expiredKnowledge = await prisma.knowledgeItem.count({
-      where: { expiryDate: { lt: new Date() } },
+      where: {
+        approvalStatus: ApprovalStatus.APPROVED,
+        expiryDate: { lt: new Date() },
+      },
     });
     const totalBriefs = await prisma.creatorBrief.count();
 
