@@ -80,8 +80,8 @@ export const Header: React.FC<HeaderProps> = ({
 
         {/* Persona Selector (Visibly labelled Demo Role Switcher) */}
         <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200/90 rounded-lg px-2.5 py-1">
-          <span className="text-[10px] uppercase tracking-wider text-slate-400 font-semibold hidden sm:inline">
-            Role:
+          <span className="text-[10px] uppercase tracking-wider text-indigo-700 font-bold bg-indigo-50/80 px-1.5 py-0.5 rounded border border-indigo-200/60 hidden sm:inline">
+            Demo Persona:
           </span>
           <select
             value={currentUser.id}
@@ -89,12 +89,12 @@ export const Header: React.FC<HeaderProps> = ({
               const selected = availableUsers.find((u) => u.id === e.target.value);
               if (selected) onSelectUser(selected);
             }}
-            className="text-xs font-medium text-slate-800 bg-transparent border-0 outline-none cursor-pointer focus:ring-0 pr-1 py-0.5"
-            aria-label="Switch active demo role"
+            className="text-xs font-semibold text-slate-800 bg-transparent border-0 outline-none cursor-pointer focus:ring-0 pr-1 py-0.5"
+            aria-label="Switch demo persona for testing role-based access"
           >
             {availableUsers.map((user) => (
               <option key={user.id} value={user.id}>
-                {user.name} ({user.role === "BRAND_ADMIN" ? "Admin" : user.role === "AGENCY_CREATOR" ? "Agency" : user.role === "EXTERNAL_CREATOR" ? "Creator" : "Auditor"})
+                {user.name} ({user.role === "BRAND_ADMIN" ? "Brand Admin" : user.role === "AGENCY_CREATOR" ? "Agency Creator" : user.role === "EXTERNAL_CREATOR" ? "External Creator" : "Auditor"})
               </option>
             ))}
           </select>

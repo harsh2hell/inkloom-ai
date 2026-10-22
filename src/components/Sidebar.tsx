@@ -230,7 +230,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <span className={`text-[10px] font-medium px-2 py-0.5 rounded border ${badge.color}`}>
               {badge.label}
             </span>
-            <span className="text-[10px] text-slate-400">Team ERROR 404</span>
+            <span className="text-[10px] text-slate-400">Demo Persona Active</span>
           </div>
         </div>
       </aside>

@@ -411,7 +411,7 @@ export const CorrectionStudioView: React.FC<CorrectionStudioProps> = ({
       {/* Main Split-Pane Workspace */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
         {/* Left Pane: Content Editor & Visual Diff (5 Cols) */}
-        <div className="lg:col-span-5 saas-card p-4 space-y-4">
+        <div className="lg:col-span-5 saas-card p-4 sm:p-5 space-y-4 min-w-0">
           <div className="flex items-center justify-between pb-2 border-b border-slate-100">
             <div className="flex items-center gap-2">
               <FileEdit className="w-4 h-4 text-slate-500" />
@@ -489,7 +489,7 @@ export const CorrectionStudioView: React.FC<CorrectionStudioProps> = ({
         </div>
 
         {/* Right Pane: Evidence & Findings Workspace (7 Cols) */}
-        <div className="lg:col-span-7 saas-card p-4 space-y-4">
+        <div className="lg:col-span-7 saas-card p-4 sm:p-5 space-y-4 min-w-0">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-slate-100">
             <div>
               <h3 className="text-xs font-bold text-slate-900">
@@ -673,9 +673,9 @@ export const CorrectionStudioView: React.FC<CorrectionStudioProps> = ({
       </div>
 
       {/* Bottom Human Review & Approval Action Bar */}
-      <div className="saas-card p-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2">
+      <div className="saas-card p-4 sm:p-5 flex flex-col xl:flex-row xl:items-center justify-between gap-4">
+        <div className="space-y-1">
+          <div className="flex items-center gap-2 flex-wrap">
             <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
               Governance Gate & Approval Sign-off
             </h4>
@@ -687,26 +687,26 @@ export const CorrectionStudioView: React.FC<CorrectionStudioProps> = ({
 
           {/* RBAC Notice */}
           {currentUser.role === "AGENCY_CREATOR" || currentUser.role === "EXTERNAL_CREATOR" ? (
-            <p className="text-[11px] text-amber-600 font-medium mt-0.5">
+            <p className="text-[11px] text-amber-600 font-medium">
               Policy Rule: Creators cannot approve their own content. Switch role to Brand Admin (Sarah Chen) to approve.
             </p>
           ) : currentUser.role === "AUDITOR" ? (
-            <p className="text-[11px] text-slate-500 font-medium mt-0.5">
+            <p className="text-[11px] text-slate-500 font-medium">
               Auditor role has read-only assurance permissions.
             </p>
           ) : (
-            <p className="text-[11px] text-slate-500 mt-0.5">
+            <p className="text-[11px] text-slate-500">
               Brand Admin authority active. Approvals require zero open high-risk findings, or explicit recorded override.
             </p>
           )}
         </div>
 
         {/* Action Buttons */}
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-2.5">
           {activeVersion.status === "APPROVED" && (
             <button
               onClick={onOpenBriefsTab}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white text-xs font-semibold rounded-lg shadow-2xs transition-colors"
+              className="flex items-center gap-1.5 px-3 py-2 bg-purple-600 hover:bg-purple-700 text-white text-xs font-semibold rounded-lg shadow-2xs transition-colors whitespace-nowrap"
             >
               <FileCheck className="w-3.5 h-3.5" />
               <span>Generate Creator Brief</span>
@@ -716,7 +716,7 @@ export const CorrectionStudioView: React.FC<CorrectionStudioProps> = ({
           <button
             onClick={() => handleReviewDecision("CHANGES_REQUESTED", "Revisions requested via Correction Studio.")}
             disabled={currentUser.role !== "BRAND_ADMIN"}
-            className="px-3 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-800 text-xs font-semibold rounded-lg border border-amber-200 transition-colors disabled:opacity-40"
+            className="px-3 py-2 bg-amber-50 hover:bg-amber-100 text-amber-800 text-xs font-semibold rounded-lg border border-amber-200 transition-colors disabled:opacity-40 whitespace-nowrap"
           >
             Request Changes
           </button>
@@ -724,7 +724,7 @@ export const CorrectionStudioView: React.FC<CorrectionStudioProps> = ({
           <button
             onClick={() => setShowOverrideModal(true)}
             disabled={currentUser.role !== "BRAND_ADMIN"}
-            className="px-3 py-1.5 bg-purple-50 hover:bg-purple-100 text-purple-800 text-xs font-semibold rounded-lg border border-purple-200 transition-colors disabled:opacity-40"
+            className="px-3 py-2 bg-purple-50 hover:bg-purple-100 text-purple-800 text-xs font-semibold rounded-lg border border-purple-200 transition-colors disabled:opacity-40 whitespace-nowrap"
           >
             Override Findings
           </button>
@@ -735,7 +735,7 @@ export const CorrectionStudioView: React.FC<CorrectionStudioProps> = ({
               currentUser.role !== "BRAND_ADMIN" ||
               findings.some((f: any) => f.severity === "HIGH" && f.resolutionStatus === "OPEN")
             }
-            className="flex items-center gap-1.5 px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-lg shadow-2xs transition-colors disabled:opacity-40"
+            className="flex items-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-lg shadow-2xs transition-colors disabled:opacity-40 whitespace-nowrap"
           >
             <Check className="w-3.5 h-3.5" />
             <span>Approve for Publication</span>

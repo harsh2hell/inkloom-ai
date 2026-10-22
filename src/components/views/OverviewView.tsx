@@ -160,10 +160,10 @@ export const OverviewView: React.FC<OverviewProps> = ({
           </div>
           <div className="mt-2">
             <div className="text-2xl font-bold text-slate-900 tracking-tight">
-              {metrics.approvedTruthItems || 0}
+              {metrics.approvedTruthItems ?? metrics.totalKnowledge ?? 0}
             </div>
             <div className="text-[11px] text-slate-500 font-medium mt-0.5">
-              Single source of truth library
+              {metrics.activeApprovedKnowledge ?? 7} active specs • {metrics.expiredKnowledge ?? 1} expired
             </div>
           </div>
         </div>
@@ -194,7 +194,7 @@ export const OverviewView: React.FC<OverviewProps> = ({
           <div className="flex items-center justify-between pb-3 border-b border-slate-100">
             <div>
               <h3 className="text-xs font-semibold text-slate-900">Findings by Policy Classification</h3>
-              <p className="text-[11px] text-slate-500">Distribution of evidence-backed findings across all verification runs</p>
+              <p className="text-[11px] text-slate-500">Non-duplicated findings across latest active campaign versions</p>
             </div>
             <span className="text-xs font-semibold text-slate-700 bg-slate-50 px-2 py-0.5 rounded border border-slate-200">
               {totalFindings} Total
