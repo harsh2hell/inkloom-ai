@@ -12,6 +12,7 @@ import {
   X,
   Database,
   Plus,
+  LogOut,
 } from "lucide-react";
 import { UserProfile } from "./Navbar";
 
@@ -22,6 +23,7 @@ interface SidebarProps {
   isOpen: boolean;
   onClose: () => void;
   aiMode?: string;
+  onSignOut?: () => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -29,6 +31,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   setActiveTab,
   isOpen,
   onClose,
+  onSignOut,
 }) => {
   const [health, setHealth] = useState<{
     database: { reachable: boolean; latencyMs?: number };
@@ -173,9 +176,30 @@ export const Sidebar: React.FC<SidebarProps> = ({
           })}
         </nav>
 
-        {/* Bottom: Database Live Telemetry Pill */}
+        {/* Bottom: Database Live Telemetry Pill & Sign Out Button */}
         <div className="flex flex-col items-center gap-2 pt-1">
-          <div className="w-8 h-[1px] bg-slate-200/80 mb-1 rounded-full" />
+          <div className="w-8 h-[1px] bg-slate-200/80 mb-0.5 rounded-full" />
+
+          {/* Sign Out Action Button */}
+          {onSignOut && (
+            <button
+              onClick={() => {
+                onClose();
+                onSignOut();
+              }}
+              className="w-11 h-11 rounded-[20px] bg-slate-50 hover:bg-rose-50 border border-slate-200/90 hover:border-rose-200 flex items-center justify-center text-slate-500 hover:text-rose-600 transition-all hover:scale-105 cursor-pointer group relative shadow-2xs"
+              title="Sign Out of Dashboard"
+              aria-label="Sign Out of Dashboard"
+            >
+              <LogOut className="w-4 h-4 stroke-[1.9]" />
+
+              {/* Tooltip */}
+              <div className="absolute left-16 top-1/2 -translate-y-1/2 bg-slate-950/95 backdrop-blur-md text-white text-[11px] font-bold py-2 px-3.5 rounded-2xl whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-all duration-200 shadow-2xl z-50 border border-slate-800">
+                Sign Out
+              </div>
+            </button>
+          )}
+
           <div
             className="w-11 h-11 rounded-[20px] bg-slate-50 hover:bg-slate-100 border border-slate-200/90 flex items-center justify-center text-slate-600 transition-all hover:scale-105 cursor-pointer group relative shadow-2xs"
             title="Database & AI Telemetry"

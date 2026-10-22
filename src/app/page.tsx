@@ -14,6 +14,7 @@ import { AuditLogView } from "@/components/views/AuditLogView";
 import { JudgeGuideView } from "@/components/views/JudgeGuideView";
 import { SubmitContentView } from "@/components/views/SubmitContentView";
 import { AuthModal } from "@/components/AuthModal";
+import { AuthPageView } from "@/components/views/AuthPageView";
 
 import { ShieldAlert } from "lucide-react";
 
@@ -76,6 +77,13 @@ export default function Home() {
     setRefreshKey((k) => k + 1);
   };
 
+  const handleSignOut = () => {
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("inkloom_active_user_id");
+    }
+    setCurrentUser(null);
+  };
+
   const handleOpenStudio = (contentId: string) => {
     setStudioContentId(contentId);
     setActiveTab("studio");
@@ -96,7 +104,7 @@ export default function Home() {
     );
   }
 
-  if (userError || !currentUser) {
+  if (userError) {
     return (
       <div className="min-h-screen bg-[#e8edf4] flex flex-col items-center justify-center p-6 text-slate-600">
         <div className="max-w-md w-full bg-white p-6 rounded-3xl border border-rose-200 shadow-md text-center space-y-3">
@@ -104,18 +112,29 @@ export default function Home() {
             <ShieldAlert className="w-6 h-6" />
           </div>
           <h2 className="text-sm font-bold text-slate-900">Database Authentication Error</h2>
-          <p className="text-xs text-rose-600 font-medium">{userError || "Failed to load database users"}</p>
+          <p className="text-xs text-rose-600 font-medium">{userError}</p>
           <p className="text-[11px] text-slate-400">
             Zero mock data enforced: The application will not substitute fake user personas when PostgreSQL is unavailable.
           </p>
           <button
             onClick={fetchUsers}
-            className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-full shadow-xs transition-colors"
+            className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-full shadow-xs transition-colors cursor-pointer"
           >
             Retry Connection
           </button>
         </div>
       </div>
+    );
+  }
+
+  // When signed out, render dedicated full-page Login & Sign Up screen
+  if (!currentUser) {
+    return (
+      <AuthPageView
+        availableUsers={availableUsers}
+        onSelectUser={handleSelectUser}
+        onUserRegistered={handleUserRegistered}
+      />
     );
   }
 
@@ -131,6 +150,7 @@ export default function Home() {
           isOpen={isMobileSidebarOpen}
           onClose={() => setIsMobileSidebarOpen(false)}
           aiMode="AI_ASSISTED"
+          onSignOut={handleSignOut}
         />
 
         {/* 2. Main Canvas Body */}
@@ -145,6 +165,7 @@ export default function Home() {
             onOpenSubmitModal={() => setActiveTab("submit")}
             onSelectTab={setActiveTab}
             onOpenAuthModal={() => setIsAuthModalOpen(true)}
+            onSignOut={handleSignOut}
           />
 
           {/* Active Workspace View */}

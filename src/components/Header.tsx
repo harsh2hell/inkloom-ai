@@ -12,6 +12,7 @@ import {
   Shield,
   SlidersHorizontal,
   ChevronDown,
+  LogOut,
 } from "lucide-react";
 import { UserProfile } from "./Navbar";
 
@@ -24,6 +25,7 @@ interface HeaderProps {
   onOpenSubmitModal: () => void;
   onSelectTab?: (tab: string) => void;
   onOpenAuthModal?: () => void;
+  onSignOut?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -35,6 +37,7 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenSubmitModal,
   onSelectTab,
   onOpenAuthModal,
+  onSignOut,
 }) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [showPersonaMenu, setShowPersonaMenu] = useState(false);
@@ -197,8 +200,8 @@ export const Header: React.FC<HeaderProps> = ({
               })}
 
               {/* Register / Sign In Trigger */}
-              {onOpenAuthModal && (
-                <div className="pt-1.5 mt-1 border-t border-slate-100">
+              <div className="pt-1.5 mt-1 border-t border-slate-100 space-y-1">
+                {onOpenAuthModal && (
                   <button
                     onClick={() => {
                       setShowPersonaMenu(false);
@@ -209,8 +212,21 @@ export const Header: React.FC<HeaderProps> = ({
                     <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
                     <span>Register New Profile</span>
                   </button>
-                </div>
-              )}
+                )}
+
+                {onSignOut && (
+                  <button
+                    onClick={() => {
+                      setShowPersonaMenu(false);
+                      onSignOut();
+                    }}
+                    className="w-full flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-xl text-center text-xs font-bold text-rose-600 bg-rose-50 hover:bg-rose-100 transition-colors cursor-pointer"
+                  >
+                    <LogOut className="w-3.5 h-3.5 stroke-[2.2]" />
+                    <span>Sign Out</span>
+                  </button>
+                )}
+              </div>
             </div>
           )}
         </div>
