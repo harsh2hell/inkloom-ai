@@ -33,42 +33,44 @@ export async function POST(
 
     if (!submitter) throw new Error("Submitter user not found.");
 
-    // 1. Create new version, preserving all past versions and analysis runs intact
-    const newVersion = await prisma.contentVersion.create({
-      data: {
-        contentItemId: contentItem.id,
-        versionNumber: nextVersionNumber,
-        textContent,
-        submittedById: submitter.id,
-        changeNotes: changeNotes || `Revision v${nextVersionNumber} created via Correction Studio.`,
-        status: ContentStatus.SUBMITTED,
-      },
-    });
-
-    // 2. Update ContentItem's pointer and status
-    await prisma.contentItem.update({
-      where: { id: contentItem.id },
-      data: {
-        currentVersionNumber: nextVersionNumber,
-        status: ContentStatus.SUBMITTED,
-      },
-    });
-
-    // 3. Record in Audit Log
-    await prisma.auditLog.create({
-      data: {
-        action: "VERSION_CREATED",
-        userId: submitter.id,
-        userName: submitter.name,
-        userRole: submitter.role,
-        entityType: "CONTENT_VERSION",
-        entityId: newVersion.id,
-        details: JSON.stringify({
+    // 1. Create new version and update content pointer atomically
+    const newVersion = await prisma.$transaction(async (tx) => {
+      const ver = await tx.contentVersion.create({
+        data: {
           contentItemId: contentItem.id,
           versionNumber: nextVersionNumber,
-          changeNotes,
-        }),
-      },
+          textContent,
+          submittedById: submitter.id,
+          changeNotes: changeNotes || `Revision v${nextVersionNumber} created via Correction Studio.`,
+          status: ContentStatus.SUBMITTED,
+        },
+      });
+
+      await tx.contentItem.update({
+        where: { id: contentItem.id },
+        data: {
+          currentVersionNumber: nextVersionNumber,
+          status: ContentStatus.SUBMITTED,
+        },
+      });
+
+      await tx.auditLog.create({
+        data: {
+          action: "VERSION_CREATED",
+          userId: submitter.id,
+          userName: submitter.name,
+          userRole: submitter.role,
+          entityType: "CONTENT_VERSION",
+          entityId: ver.id,
+          details: JSON.stringify({
+            contentItemId: contentItem.id,
+            versionNumber: nextVersionNumber,
+            changeNotes,
+          }),
+        },
+      });
+
+      return ver;
     });
 
     // 4. Run verification engine on the new version

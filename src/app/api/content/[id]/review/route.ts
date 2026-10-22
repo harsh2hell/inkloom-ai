@@ -96,44 +96,46 @@ export async function POST(
       newStatus = ContentStatus.CHANGES_REQUESTED;
     }
 
-    // 3. Create HumanReview record
-    const humanReview = await prisma.humanReview.create({
-      data: {
-        contentVersionId: version.id,
-        reviewerId: reviewer.id,
-        decision: decision as ReviewDecision,
-        notes: notes || null,
-      },
-    });
+    // 3. Perform atomic state transition via prisma.$transaction
+    const [humanReview] = await prisma.$transaction(async (tx) => {
+      const reviewRecord = await tx.humanReview.create({
+        data: {
+          contentVersionId: version.id,
+          reviewerId: reviewer.id,
+          decision: decision as ReviewDecision,
+          notes: notes || null,
+        },
+      });
 
-    // 4. Update Version and ContentItem status
-    await prisma.contentVersion.update({
-      where: { id: version.id },
-      data: { status: newStatus },
-    });
+      await tx.contentVersion.update({
+        where: { id: version.id },
+        data: { status: newStatus },
+      });
 
-    await prisma.contentItem.update({
-      where: { id: contentItem.id },
-      data: { status: newStatus },
-    });
+      await tx.contentItem.update({
+        where: { id: contentItem.id },
+        data: { status: newStatus },
+      });
 
-    // 5. Record immutable Audit Log
-    await prisma.auditLog.create({
-      data: {
-        action: `CONTENT_${decision}`,
-        userId: reviewer.id,
-        userName: reviewer.name,
-        userRole: reviewer.role,
-        entityType: "CONTENT_REVIEW",
-        entityId: humanReview.id,
-        details: JSON.stringify({
-          contentItemId: contentItem.id,
-          versionNumber: version.versionNumber,
-          decision,
-          notes,
-          newStatus,
-        }),
-      },
+      await tx.auditLog.create({
+        data: {
+          action: `CONTENT_${decision}`,
+          userId: reviewer.id,
+          userName: reviewer.name,
+          userRole: reviewer.role,
+          entityType: "CONTENT_REVIEW",
+          entityId: reviewRecord.id,
+          details: JSON.stringify({
+            contentItemId: contentItem.id,
+            versionNumber: version.versionNumber,
+            decision,
+            notes,
+            newStatus,
+          }),
+        },
+      });
+
+      return [reviewRecord];
     });
 
     return NextResponse.json({

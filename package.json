@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run",
-    "seed": "tsx prisma/seed.ts"
+    "seed": "tsx prisma/seed.ts",
+    "prisma:migrate": "prisma migrate deploy"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
