@@ -6,10 +6,10 @@
 ## 1. Product Overview
 
 - **Source Repository:** [https://github.com/harsh2hell/inkloom-ai](https://github.com/harsh2hell/inkloom-ai)
-- **Live Public URL:** [https://26f8a9572bfec8.lhr.life](https://26f8a9572bfec8.lhr.life)
+- **Live Public URL:** [https://followed-dig-systematic-twist.trycloudflare.com](https://followed-dig-systematic-twist.trycloudflare.com)
 - **Local Dev URL:** [http://localhost:3000](http://localhost:3000)
 
-Inkloom AI is a shared content-governance and verification workspace for brands, marketing agencies, and creators.
+Inkloom AI is a shared content-governance and verification workspace for brands, marketing agencies, and creators. The application features a premium, minimalist B2B SaaS interface with a fixed-width navigation sidebar, interactive Correction Studio with one-click fixes and diff viewer, and an immutable governance audit trail.
 
 A brand maintains one approved source of truth containing product facts, permitted and prohibited claims, guidelines, terminology, mandatory disclosures, and supporting source evidence. Marketing content is strictly audited against this knowledge before publication. Every finding is evidence-backed, citations are strictly validated application-side, and every approval decision remains with a human reviewer.
 
