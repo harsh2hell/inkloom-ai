@@ -5,6 +5,10 @@
 
 ## 1. Product Overview
 
+- **Source Repository:** [https://github.com/harsh2hell/inkloom-ai](https://github.com/harsh2hell/inkloom-ai)
+- **Live Public URL:** [https://26f8a9572bfec8.lhr.life](https://26f8a9572bfec8.lhr.life)
+- **Local Dev URL:** [http://localhost:3000](http://localhost:3000)
+
 Inkloom AI is a shared content-governance and verification workspace for brands, marketing agencies, and creators.
 
 A brand maintains one approved source of truth containing product facts, permitted and prohibited claims, guidelines, terminology, mandatory disclosures, and supporting source evidence. Marketing content is strictly audited against this knowledge before publication. Every finding is evidence-backed, citations are strictly validated application-side, and every approval decision remains with a human reviewer.
@@ -33,7 +37,7 @@ The platform also closes the loop by generating official creator briefs from app
 
 ### 1. Clone & Install Dependencies
 ```bash
-git clone <repo-url> inkloom-ai
+git clone https://github.com/harsh2hell/inkloom-ai.git
 cd inkloom-ai
 npm install
 ```
