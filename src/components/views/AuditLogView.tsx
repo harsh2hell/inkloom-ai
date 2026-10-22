@@ -14,7 +14,11 @@ import {
   Lock,
 } from "lucide-react";
 
-export const AuditLogView: React.FC = () => {
+interface AuditLogProps {
+  currentUser?: any;
+}
+
+export const AuditLogView: React.FC<AuditLogProps> = ({ currentUser }) => {
   const [logs, setLogs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [auditError, setAuditError] = useState<string | null>(null);
@@ -26,7 +30,10 @@ export const AuditLogView: React.FC = () => {
     try {
       setLoading(true);
       setAuditError(null);
-      const res = await fetch(`/api/audit?entityType=${selectedEntity}&limit=100`);
+      const userParams = currentUser
+        ? `&userId=${currentUser.id}&role=${currentUser.role}`
+        : "";
+      const res = await fetch(`/api/audit?entityType=${selectedEntity}&limit=100${userParams}`);
       if (!res.ok) {
         throw new Error(`Failed to load audit events (HTTP ${res.status})`);
       }
@@ -42,7 +49,7 @@ export const AuditLogView: React.FC = () => {
 
   useEffect(() => {
     fetchLogs();
-  }, [selectedEntity]);
+  }, [selectedEntity, currentUser?.id]);
 
   const filteredLogs = logs.filter((log) => {
     const q = search.toLowerCase();

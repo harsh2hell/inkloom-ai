@@ -55,7 +55,10 @@ export const OverviewView: React.FC<OverviewProps> = ({
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/dashboard");
+      const url = currentUser
+        ? `/api/dashboard?userId=${currentUser.id}&role=${currentUser.role}`
+        : "/api/dashboard";
+      const res = await fetch(url);
       if (!res.ok) {
         throw new Error(`Failed to load governance metrics (HTTP ${res.status})`);
       }
@@ -74,7 +77,7 @@ export const OverviewView: React.FC<OverviewProps> = ({
 
   useEffect(() => {
     fetchDashboard();
-  }, []);
+  }, [currentUser?.id]);
 
   if (loading) {
     return (

@@ -3,9 +3,19 @@ import { prisma } from "@/lib/prisma";
 import { verifyContent } from "@/lib/verification/engine";
 import { ContentType, ContentStatus } from "@prisma/client";
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
+    const { searchParams } = new URL(req.url);
+    const userId = searchParams.get("userId");
+    const role = searchParams.get("role");
+
+    const where: any = {};
+    if (userId && (role === "AGENCY_CREATOR" || role === "EXTERNAL_CREATOR")) {
+      where.submitterId = userId;
+    }
+
     const items = await prisma.contentItem.findMany({
+      where,
       include: {
         brand: true,
         submitter: true,

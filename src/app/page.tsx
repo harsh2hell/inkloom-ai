@@ -13,6 +13,7 @@ import { CreatorBriefsView } from "@/components/views/CreatorBriefsView";
 import { AuditLogView } from "@/components/views/AuditLogView";
 import { JudgeGuideView } from "@/components/views/JudgeGuideView";
 import { SubmitContentView } from "@/components/views/SubmitContentView";
+import { AuthModal } from "@/components/AuthModal";
 
 import { ShieldAlert } from "lucide-react";
 
@@ -23,6 +24,7 @@ export default function Home() {
   const [userLoading, setUserLoading] = useState(true);
   const [userError, setUserError] = useState<string | null>(null);
   const [isSubmitModalOpen, setIsSubmitModalOpen] = useState(false);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [studioContentId, setStudioContentId] = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
@@ -32,7 +34,9 @@ export default function Home() {
     setUserLoading(true);
     setUserError(null);
     try {
-      const r = await fetch("/api/auth/current-user");
+      const storedUserId = typeof window !== "undefined" ? localStorage.getItem("inkloom_active_user_id") : null;
+      const url = storedUserId ? `/api/auth/current-user?userId=${storedUserId}` : "/api/auth/current-user";
+      const r = await fetch(url);
       if (!r.ok) {
         throw new Error(`Failed to load user accounts (HTTP ${r.status})`);
       }
@@ -54,6 +58,23 @@ export default function Home() {
   useEffect(() => {
     fetchUsers();
   }, []);
+
+  const handleSelectUser = (user: UserProfile) => {
+    setCurrentUser(user);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("inkloom_active_user_id", user.id);
+    }
+    setRefreshKey((k) => k + 1);
+  };
+
+  const handleUserRegistered = (newUser: UserProfile) => {
+    setAvailableUsers((prev) => [newUser, ...prev]);
+    setCurrentUser(newUser);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("inkloom_active_user_id", newUser.id);
+    }
+    setRefreshKey((k) => k + 1);
+  };
 
   const handleOpenStudio = (contentId: string) => {
     setStudioContentId(contentId);
@@ -120,16 +141,17 @@ export default function Home() {
             onOpenSidebar={() => setIsMobileSidebarOpen(true)}
             currentUser={currentUser}
             availableUsers={availableUsers}
-            onSelectUser={setCurrentUser}
+            onSelectUser={handleSelectUser}
             onOpenSubmitModal={() => setActiveTab("submit")}
             onSelectTab={setActiveTab}
+            onOpenAuthModal={() => setIsAuthModalOpen(true)}
           />
 
           {/* Active Workspace View */}
           <main className="flex-1 w-full min-h-0 overflow-y-auto">
             {activeTab === "overview" && (
               <OverviewView
-                key={`overview-${refreshKey}`}
+                key={`overview-${refreshKey}-${currentUser.id}`}
                 onOpenStudio={handleOpenStudio}
                 onOpenTab={setActiveTab}
                 onOpenSubmitModal={() => setActiveTab("submit")}
@@ -150,9 +172,10 @@ export default function Home() {
 
             {activeTab === "content" && (
               <ContentListView
-                key={`content-${refreshKey}`}
+                key={`content-${refreshKey}-${currentUser.id}`}
                 onOpenStudio={handleOpenStudio}
                 onOpenSubmitModal={() => setActiveTab("submit")}
+                currentUser={currentUser}
               />
             )}
 
@@ -170,7 +193,12 @@ export default function Home() {
               <CreatorBriefsView key={`briefs-${refreshKey}-${currentUser.id}`} currentUser={currentUser} />
             )}
 
-            {activeTab === "audit" && <AuditLogView key={`audit-${refreshKey}`} />}
+            {activeTab === "audit" && (
+              <AuditLogView
+                key={`audit-${refreshKey}-${currentUser.id}`}
+                currentUser={currentUser}
+              />
+            )}
 
             {activeTab === "guide" && (
               <JudgeGuideView
@@ -188,6 +216,16 @@ export default function Home() {
         onClose={() => setIsSubmitModalOpen(false)}
         onSubmitSuccess={handleSubmitSuccess}
         currentUserId={currentUser.id}
+      />
+
+      {/* Authentication & Profile Registration Modal */}
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+        currentUser={currentUser}
+        availableUsers={availableUsers}
+        onSelectUser={handleSelectUser}
+        onUserRegistered={handleUserRegistered}
       />
     </div>
   );

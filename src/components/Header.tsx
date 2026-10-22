@@ -23,6 +23,7 @@ interface HeaderProps {
   onSelectUser: (user: UserProfile) => void;
   onOpenSubmitModal: () => void;
   onSelectTab?: (tab: string) => void;
+  onOpenAuthModal?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -33,6 +34,7 @@ export const Header: React.FC<HeaderProps> = ({
   onSelectUser,
   onOpenSubmitModal,
   onSelectTab,
+  onOpenAuthModal,
 }) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [showPersonaMenu, setShowPersonaMenu] = useState(false);
@@ -193,6 +195,22 @@ export const Header: React.FC<HeaderProps> = ({
                   </button>
                 );
               })}
+
+              {/* Register / Sign In Trigger */}
+              {onOpenAuthModal && (
+                <div className="pt-1.5 mt-1 border-t border-slate-100">
+                  <button
+                    onClick={() => {
+                      setShowPersonaMenu(false);
+                      onOpenAuthModal();
+                    }}
+                    className="w-full flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-xl text-center text-xs font-bold text-[#e05638] bg-orange-50/80 hover:bg-orange-100/90 transition-colors cursor-pointer"
+                  >
+                    <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
+                    <span>Register New Profile</span>
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </div>

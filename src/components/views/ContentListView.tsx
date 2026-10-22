@@ -20,11 +20,13 @@ import {
 interface ContentListProps {
   onOpenStudio: (contentId: string) => void;
   onOpenSubmitModal: () => void;
+  currentUser: any;
 }
 
 export const ContentListView: React.FC<ContentListProps> = ({
   onOpenStudio,
   onOpenSubmitModal,
+  currentUser,
 }) => {
   const [items, setItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -38,7 +40,10 @@ export const ContentListView: React.FC<ContentListProps> = ({
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/content");
+      const url = currentUser
+        ? `/api/content?userId=${currentUser.id}&role=${currentUser.role}`
+        : "/api/content";
+      const res = await fetch(url);
       if (!res.ok) {
         throw new Error(`Failed to load content reviews (HTTP ${res.status})`);
       }
@@ -54,7 +59,7 @@ export const ContentListView: React.FC<ContentListProps> = ({
 
   useEffect(() => {
     fetchContent();
-  }, []);
+  }, [currentUser?.id]);
 
   const formatContentType = (type: string) => {
     switch (type) {

@@ -2,19 +2,29 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { FindingType, ContentStatus, FindingSeverity, ApprovalStatus } from "@prisma/client";
 
-export async function GET() {
+export async function GET(req: Request) {
   try {
+    const { searchParams } = new URL(req.url);
+    const userId = searchParams.get("userId");
+    const role = searchParams.get("role");
+
+    const contentFilter: any = {};
+    if (userId && (role === "AGENCY_CREATOR" || role === "EXTERNAL_CREATOR")) {
+      contentFilter.submitterId = userId;
+    }
+
     // 1. Total content items (Unique campaigns/drafts)
-    const totalContent = await prisma.contentItem.count();
+    const totalContent = await prisma.contentItem.count({ where: contentFilter });
     const approvedContent = await prisma.contentItem.count({
-      where: { status: ContentStatus.APPROVED },
+      where: { ...contentFilter, status: ContentStatus.APPROVED },
     });
     const pendingReviews = await prisma.contentItem.count({
-      where: { status: { in: [ContentStatus.SUBMITTED, ContentStatus.CHANGES_REQUESTED] } },
+      where: { ...contentFilter, status: { in: [ContentStatus.SUBMITTED, ContentStatus.CHANGES_REQUESTED] } },
     });
 
     // 2. Non-duplicated findings from the latest analysis run of each active content item
     const latestContentRuns = await prisma.contentItem.findMany({
+      where: contentFilter,
       select: {
         id: true,
         status: true,
@@ -95,6 +105,7 @@ export async function GET() {
 
     // 6. Recent content items (last 5)
     const recentContent = await prisma.contentItem.findMany({
+      where: contentFilter,
       include: {
         brand: true,
         submitter: true,
