@@ -374,6 +374,20 @@ describe("Inkloom AI — 14 Critical Acceptance Tests", () => {
     expect(originalV1?.analysisRuns[0]?.id).toBe(run1.id);
     expect(originalV1?.analysisRuns[0]?.findings.length).toBe(1);
     expect(v2.versionNumber).toBe(2);
+
+    // Clean up testContent to ensure zero test clutter in the live pipeline
+    await prisma.finding.deleteMany({
+      where: { analysisRun: { contentVersion: { contentItemId: testContent.id } } },
+    });
+    await prisma.analysisRun.deleteMany({
+      where: { contentVersion: { contentItemId: testContent.id } },
+    });
+    await prisma.contentVersion.deleteMany({
+      where: { contentItemId: testContent.id },
+    });
+    await prisma.contentItem.delete({
+      where: { id: testContent.id },
+    });
   });
 
   // Acceptance Test 12: A creator brief derives from the approved version
@@ -398,6 +412,11 @@ describe("Inkloom AI — 14 Critical Acceptance Tests", () => {
     expect(brief.versionReference).toContain("Version 1");
     expect(brief.permittedClaims).toContain("source of protein");
     expect(brief.prohibitedClaims).toContain("sugar-free");
+
+    // Clean up test brief
+    await prisma.creatorBrief.delete({
+      where: { id: brief.id },
+    });
   });
 
   // Acceptance Test 13: A changed creator caption is checked against its brief
