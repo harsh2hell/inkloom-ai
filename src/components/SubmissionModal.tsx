@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { X, Sparkles, Send, ShieldAlert, CheckCircle, FileText } from "lucide-react";
+import { X, Send, ShieldAlert, CheckCircle2, FileText, Sparkles } from "lucide-react";
 
 interface SubmissionModalProps {
   isOpen: boolean;
@@ -91,173 +91,166 @@ export const SubmissionModal: React.FC<SubmissionModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full border border-slate-200 overflow-hidden flex flex-col max-h-[90vh]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs animate-in fade-in duration-150">
+      <div className="bg-white rounded-xl shadow-xl max-w-xl w-full border border-slate-200 overflow-hidden flex flex-col max-h-[90vh]">
         {/* Header */}
-        <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50/50">
+        <div className="px-5 py-3.5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
           <div>
-            <h2 className="text-lg font-bold text-slate-900">Submit Marketing Content for Verification</h2>
-            <p className="text-xs text-slate-500">
-              Content is checked against approved Verdanta Foods brand knowledge & deterministic policies
+            <h3 className="text-sm font-bold text-slate-900">Submit Content for Verification</h3>
+            <p className="text-[11px] text-slate-500">
+              Evaluated against Verdanta Foods approved specifications and policy rules
             </p>
           </div>
           <button
             onClick={onClose}
-            className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
+            className="p-1 rounded-md text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
           >
-            <X className="w-5 h-5" />
+            <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Form Body */}
-        <form onSubmit={handleSubmit} className="p-6 overflow-y-auto space-y-4">
+        <form onSubmit={handleSubmit} className="p-5 overflow-y-auto space-y-3.5 text-xs">
           {errorMessage && (
-            <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700 flex items-center gap-2">
-              <ShieldAlert className="w-4 h-4 text-red-500 shrink-0" />
+            <div className="p-2.5 bg-rose-50 border border-rose-200 rounded-lg text-rose-700 flex items-center gap-2">
+              <ShieldAlert className="w-4 h-4 text-rose-500 shrink-0" />
               <span>{errorMessage}</span>
             </div>
           )}
 
           {/* Quick Demo Templates */}
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-              Quick Judge Demo Templates:
+            <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+              Pre-built Test Drafts:
             </label>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               <button
                 type="button"
                 onClick={() => loadTemplate("violations")}
-                className="text-left p-2 rounded-lg border border-amber-200 bg-amber-50 hover:bg-amber-100 text-amber-900 text-xs font-medium transition-colors"
+                className="text-left p-2 rounded-lg border border-amber-200 bg-amber-50/70 hover:bg-amber-100/70 text-amber-900 transition-colors"
               >
-                <div className="font-semibold text-[11px] text-amber-800">Policy Violations</div>
+                <div className="font-bold text-[11px] text-amber-800">Policy Violations</div>
                 <div className="text-[10px] text-amber-600">Sugar-free & 25g protein</div>
               </button>
               <button
                 type="button"
                 onClick={() => loadTemplate("compliant")}
-                className="text-left p-2 rounded-lg border border-emerald-200 bg-emerald-50 hover:bg-emerald-100 text-emerald-900 text-xs font-medium transition-colors"
+                className="text-left p-2 rounded-lg border border-emerald-200 bg-emerald-50/70 hover:bg-emerald-100/70 text-emerald-900 transition-colors"
               >
-                <div className="font-semibold text-[11px] text-emerald-800">Compliant Draft</div>
-                <div className="text-[10px] text-emerald-600">11g protein & disclosure</div>
+                <div className="font-bold text-[11px] text-emerald-800">Compliant Draft</div>
+                <div className="text-[10px] text-emerald-600">11g protein & 6g sugar</div>
               </button>
               <button
                 type="button"
                 onClick={() => loadTemplate("expired")}
-                className="text-left p-2 rounded-lg border border-purple-200 bg-purple-50 hover:bg-purple-100 text-purple-900 text-xs font-medium transition-colors"
+                className="text-left p-2 rounded-lg border border-purple-200 bg-purple-50/70 hover:bg-purple-100/70 text-purple-900 transition-colors"
               >
-                <div className="font-semibold text-[11px] text-purple-800">Expired Evidence</div>
-                <div className="text-[10px] text-purple-600">Organic cert test</div>
+                <div className="font-bold text-[11px] text-purple-800">Expired Evidence</div>
+                <div className="text-[10px] text-purple-600">Organic cert 2023</div>
               </button>
               <button
                 type="button"
                 onClick={() => loadTemplate("injection")}
-                className="text-left p-2 rounded-lg border border-red-200 bg-red-50 hover:bg-red-100 text-red-900 text-xs font-medium transition-colors"
+                className="text-left p-2 rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-800 transition-colors"
               >
-                <div className="font-semibold text-[11px] text-red-800">Prompt Injection</div>
-                <div className="text-[10px] text-red-600">Adversarial defense</div>
+                <div className="font-bold text-[11px] text-slate-800">Injection Defense</div>
+                <div className="text-[10px] text-slate-500">System override test</div>
               </button>
             </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-slate-700 mb-1">Campaign Name</label>
+              <label className="block text-[11px] font-semibold text-slate-700 mb-1">Campaign Name</label>
               <input
                 type="text"
                 required
                 value={campaignName}
                 onChange={(e) => setCampaignName(e.target.value)}
-                className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg focus:outline-indigo-500 bg-white"
-                placeholder="e.g. Summer Active 2026"
+                className="w-full px-3 py-1.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500"
               />
             </div>
-
             <div>
-              <label className="block text-xs font-medium text-slate-700 mb-1">Content Type</label>
-              <select
-                value={contentType}
-                onChange={(e) => setContentType(e.target.value)}
-                className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg focus:outline-indigo-500 bg-white"
-              >
-                <option value="SOCIAL_CAPTION">Social Caption (Instagram/TikTok)</option>
-                <option value="BLOG_POST">Blog Post / Longform</option>
-                <option value="PACKAGING_COPY">Packaging Copy</option>
-                <option value="AD_BANNER">Display Ad Copy</option>
-              </select>
+              <label className="block text-[11px] font-semibold text-slate-700 mb-1">Content Title</label>
+              <input
+                type="text"
+                required
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                className="w-full px-3 py-1.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500"
+              />
             </div>
           </div>
 
-          <div>
-            <label className="block text-xs font-medium text-slate-700 mb-1">Content Title / Asset</label>
-            <input
-              type="text"
-              required
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg focus:outline-indigo-500 bg-white"
-              placeholder="e.g. Plant Crunch Launch Caption v1"
-            />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="block text-[11px] font-semibold text-slate-700 mb-1">Content Format</label>
+              <select
+                value={contentType}
+                onChange={(e) => setContentType(e.target.value)}
+                className="w-full px-3 py-1.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500"
+              >
+                <option value="SOCIAL_CAPTION">Social Media Caption</option>
+                <option value="RETAIL_PACKAGING">Retail Packaging Copy</option>
+                <option value="AD_SCRIPT">Short-Form Video Ad Script</option>
+                <option value="WEBSITE_BLOG">Website / Blog Article</option>
+              </select>
+            </div>
+
+            <div className="flex items-center pt-5">
+              <label className="flex items-center gap-2 cursor-pointer select-none text-slate-700 text-xs">
+                <input
+                  type="checkbox"
+                  checked={forceDeterministic}
+                  onChange={(e) => setForceDeterministic(e.target.checked)}
+                  className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                />
+                <span>Deterministic Checks Only (Offline Mode)</span>
+              </label>
+            </div>
           </div>
 
           <div>
             <div className="flex items-center justify-between mb-1">
-              <label className="block text-xs font-medium text-slate-700">Marketing Caption / Text Draft</label>
-              <span className="text-[11px] text-slate-400">{textContent.length} characters</span>
+              <label className="block text-[11px] font-semibold text-slate-700">
+                Marketing Copy Text
+              </label>
+              <span className="text-[10px] text-slate-400">
+                {textContent.length} characters
+              </span>
             </div>
             <textarea
               required
-              rows={5}
+              rows={4}
               value={textContent}
               onChange={(e) => setTextContent(e.target.value)}
-              className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg focus:outline-indigo-500 bg-white font-mono leading-relaxed"
-              placeholder="Paste or write marketing draft here..."
+              placeholder="Paste caption or marketing claims here to verify against brand policies..."
+              className="w-full p-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500 font-sans"
             />
           </div>
 
-          <div className="flex items-center justify-between p-3 bg-slate-50 border border-slate-200 rounded-xl">
-            <div className="text-xs">
-              <span className="font-semibold text-slate-800">Verification Engine Mode</span>
-              <p className="text-[11px] text-slate-500">
-                Deterministic layer executes 100% reproducible policies regardless of AI key.
-              </p>
-            </div>
-            <label className="flex items-center gap-2 cursor-pointer text-xs font-medium text-slate-700">
-              <input
-                type="checkbox"
-                checked={forceDeterministic}
-                onChange={(e) => setForceDeterministic(e.target.checked)}
-                className="rounded-sm text-indigo-600 focus:ring-indigo-500"
-              />
-              <span>Force Deterministic-Only</span>
-            </label>
-          </div>
+          <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
+            <span className="text-[10px] text-slate-500">
+              Evaluated against 8 Verdanta specifications & policies
+            </span>
 
-          {/* Footer CTA */}
-          <div className="pt-2 flex items-center justify-end gap-3 border-t border-slate-200">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 text-xs font-medium text-slate-600 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold shadow-sm transition-all disabled:opacity-50"
-            >
-              {isSubmitting ? (
-                <>
-                  <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  <span>Verifying Content...</span>
-                </>
-              ) : (
-                <>
-                  <Send className="w-3.5 h-3.5" />
-                  <span>Submit & Verify</span>
-                </>
-              )}
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-3 py-1.5 text-slate-600 hover:bg-slate-50 border border-slate-200 rounded-lg font-medium"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={isSubmitting || !textContent.trim()}
+                className="flex items-center gap-1.5 px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg shadow-2xs transition-colors disabled:opacity-50"
+              >
+                <Send className="w-3.5 h-3.5" />
+                <span>{isSubmitting ? "Running Engine..." : "Run Compliance Analysis"}</span>
+              </button>
+            </div>
           </div>
         </form>
       </div>

@@ -1,7 +1,9 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Navbar, UserProfile } from "@/components/Navbar";
+import { Sidebar } from "@/components/Sidebar";
+import { Header } from "@/components/Header";
+import { UserProfile } from "@/components/Navbar";
 import { SubmissionModal } from "@/components/SubmissionModal";
 import { OverviewView } from "@/components/views/OverviewView";
 import { KnowledgeView } from "@/components/views/KnowledgeView";
@@ -49,6 +51,7 @@ export default function Home() {
   const [isSubmitModalOpen, setIsSubmitModalOpen] = useState(false);
   const [studioContentId, setStudioContentId] = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
   // Fetch initial users from DB
   useEffect(() => {
@@ -77,78 +80,90 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50 text-slate-900">
-      {/* Top Navbar with Hackathon Header & RBAC Switcher */}
-      <Navbar
-        currentUser={currentUser}
-        availableUsers={availableUsers}
-        onSelectUser={setCurrentUser}
-        onOpenSubmitModal={() => setIsSubmitModalOpen(true)}
+    <div className="min-h-screen bg-slate-50 text-slate-900 flex">
+      {/* 1. Left Fixed Sidebar (240px desktop, drawer on mobile) */}
+      <Sidebar
         activeTab={activeTab}
         setActiveTab={setActiveTab}
+        currentUser={currentUser}
+        isOpen={isMobileSidebarOpen}
+        onClose={() => setIsMobileSidebarOpen(false)}
         aiMode="AI_ASSISTED"
       />
 
-      {/* Main Content Area */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {activeTab === "overview" && (
-          <OverviewView
-            key={`overview-${refreshKey}`}
-            onOpenStudio={handleOpenStudio}
-            onOpenTab={setActiveTab}
-            onOpenSubmitModal={() => setIsSubmitModalOpen(true)}
-          />
-        )}
+      {/* 2. Main Workspace (fills width minus 240px sidebar) */}
+      <div className="flex-1 lg:ml-60 flex flex-col min-h-screen min-w-0">
+        {/* Top Header */}
+        <Header
+          activeTab={activeTab}
+          onOpenSidebar={() => setIsMobileSidebarOpen(true)}
+          currentUser={currentUser}
+          availableUsers={availableUsers}
+          onSelectUser={setCurrentUser}
+          onOpenSubmitModal={() => setIsSubmitModalOpen(true)}
+        />
 
-        {activeTab === "knowledge" && <KnowledgeView key={`knowledge-${refreshKey}`} />}
+        {/* View Workspace Container */}
+        <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto">
+          {activeTab === "overview" && (
+            <OverviewView
+              key={`overview-${refreshKey}`}
+              onOpenStudio={handleOpenStudio}
+              onOpenTab={setActiveTab}
+              onOpenSubmitModal={() => setIsSubmitModalOpen(true)}
+            />
+          )}
 
-        {activeTab === "content" && (
-          <ContentListView
-            key={`content-${refreshKey}`}
-            onOpenStudio={handleOpenStudio}
-            onOpenSubmitModal={() => setIsSubmitModalOpen(true)}
-          />
-        )}
+          {activeTab === "knowledge" && <KnowledgeView key={`knowledge-${refreshKey}`} />}
 
-        {activeTab === "studio" && (
-          <CorrectionStudioView
-            key={`studio-${studioContentId}-${refreshKey}-${currentUser.id}`}
-            contentId={studioContentId}
-            currentUser={currentUser}
-            onOpenBriefsTab={() => setActiveTab("briefs")}
-            onRefreshList={() => setRefreshKey((k) => k + 1)}
-          />
-        )}
+          {activeTab === "content" && (
+            <ContentListView
+              key={`content-${refreshKey}`}
+              onOpenStudio={handleOpenStudio}
+              onOpenSubmitModal={() => setIsSubmitModalOpen(true)}
+            />
+          )}
 
-        {activeTab === "briefs" && (
-          <CreatorBriefsView key={`briefs-${refreshKey}-${currentUser.id}`} currentUser={currentUser} />
-        )}
+          {activeTab === "studio" && (
+            <CorrectionStudioView
+              key={`studio-${studioContentId}-${refreshKey}-${currentUser.id}`}
+              contentId={studioContentId}
+              currentUser={currentUser}
+              onOpenBriefsTab={() => setActiveTab("briefs")}
+              onRefreshList={() => setRefreshKey((k) => k + 1)}
+            />
+          )}
 
-        {activeTab === "audit" && <AuditLogView key={`audit-${refreshKey}`} />}
+          {activeTab === "briefs" && (
+            <CreatorBriefsView key={`briefs-${refreshKey}-${currentUser.id}`} currentUser={currentUser} />
+          )}
 
-        {activeTab === "guide" && (
-          <JudgeGuideView
-            onOpenSubmitModal={() => setIsSubmitModalOpen(true)}
-            onOpenTab={setActiveTab}
-          />
-        )}
-      </main>
+          {activeTab === "audit" && <AuditLogView key={`audit-${refreshKey}`} />}
 
-      {/* Footer */}
-      <footer className="border-t border-slate-200 bg-white py-6 text-center text-xs text-slate-500">
-        <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <span className="font-bold text-slate-800">Inkloom AI</span>
-            <span>—</span>
-            <span>Traceable Content Governance & Claims Verification</span>
+          {activeTab === "guide" && (
+            <JudgeGuideView
+              onOpenSubmitModal={() => setIsSubmitModalOpen(true)}
+              onOpenTab={setActiveTab}
+            />
+          )}
+        </main>
+
+        {/* Minimal Footer */}
+        <footer className="border-t border-slate-200/80 bg-white py-4 px-6 text-xs text-slate-500">
+          <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <span className="font-semibold text-slate-800">Inkloom AI</span>
+              <span>—</span>
+              <span>Content Governance & Claims Verification</span>
+            </div>
+            <div className="text-[11px] text-slate-400">
+              CodeAxis Round 2 &bull; Team ERROR 404 &bull; Verdanta Foods Demo
+            </div>
           </div>
-          <div>
-            CodeAxis Hackathon Round 2 &bull; Team ERROR 404 &bull; Verdanta Foods (Fictional Brand Demo)
-          </div>
-        </div>
-      </footer>
+        </footer>
+      </div>
 
-      {/* Content Submission Modal */}
+      {/* Global Submission Modal */}
       <SubmissionModal
         isOpen={isSubmitModalOpen}
         onClose={() => setIsSubmitModalOpen(false)}

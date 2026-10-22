@@ -13,6 +13,9 @@ import {
   Clock,
   ArrowRight,
   Plus,
+  X,
+  FileText,
+  SlidersHorizontal,
 } from "lucide-react";
 import { UserProfile } from "../Navbar";
 
@@ -69,7 +72,7 @@ export const CreatorBriefsView: React.FC<CreatorBriefsProps> = ({ currentUser })
         });
       });
       setApprovedVersions(approved);
-      if (approved.length > 0) {
+      if (approved.length > 0 && !selectedVersionId) {
         setSelectedVersionId(approved[0].versionId);
       }
     } catch (e) {
@@ -91,23 +94,23 @@ export const CreatorBriefsView: React.FC<CreatorBriefsProps> = ({ currentUser })
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          contentVersionId: selectedVersionId,
-          userId: currentUser.id,
-          userName: currentUser.name,
-          userRole: currentUser.role,
+          approvedContentVersionId: selectedVersionId,
+          creatorHandle: "@verdanta_creator",
+          creatorPlatform: "INSTAGRAM",
         }),
       });
-
+      const data = await res.json();
       if (res.ok) {
         setShowGenerateModal(false);
         await fetchBriefs();
+        setSelectedBriefId(data.brief.id);
       }
     } catch (e) {
       console.error(e);
     }
   };
 
-  const handleSubmitAdaptation = async (e: React.FormEvent) => {
+  const handleCreatorCheck = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedBriefId || !creatorCaption.trim()) return;
 
@@ -126,13 +129,9 @@ export const CreatorBriefsView: React.FC<CreatorBriefsProps> = ({ currentUser })
       });
 
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Submission failed.");
-
       setLastSubmissionResult(data);
-      setCreatorCaption("");
-      await fetchBriefs();
-    } catch (err: any) {
-      alert(err.message || "Error submitting adaptation");
+    } catch (e) {
+      console.error(e);
     } finally {
       setIsSubmitting(false);
     }
@@ -140,304 +139,265 @@ export const CreatorBriefsView: React.FC<CreatorBriefsProps> = ({ currentUser })
 
   const selectedBrief = briefs.find((b) => b.id === selectedBriefId) || briefs[0];
 
-  const permittedList = selectedBrief ? JSON.parse(selectedBrief.permittedClaims || "[]") : [];
-  const prohibitedList = selectedBrief ? JSON.parse(selectedBrief.prohibitedClaims || "[]") : [];
-  const disclosureList = selectedBrief ? JSON.parse(selectedBrief.mandatoryDisclosures || "[]") : [];
-  const factsList = selectedBrief ? JSON.parse(selectedBrief.approvedFacts || "[]") : [];
-
   return (
-    <div className="space-y-6 animate-in fade-in duration-150">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-200 shadow-xs">
+    <div className="space-y-5">
+      {/* Page Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-slate-200/80">
         <div>
-          <div className="flex items-center gap-2 mb-1">
-            <h1 className="text-xl font-bold text-slate-900">Creator Briefs & Final Verification Loop</h1>
-            <span className="px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-purple-50 text-purple-700 border border-purple-200">
-              Closed Loop Governance
-            </span>
-          </div>
-          <p className="text-xs text-slate-500 max-w-2xl leading-relaxed">
-            Generate formal creator briefs from approved content versions. External creators adapt content and submit final captions, automatically verified for adaptation drift prior to publication sign-off.
+          <h2 className="text-xl font-bold text-slate-900 tracking-tight">Creator Governance & Adaptation Briefs</h2>
+          <p className="text-xs text-slate-500 mt-0.5">
+            Derive structured creator briefs directly from approved marketing copy and verify social adaptations against claim drift.
           </p>
         </div>
 
         <button
           onClick={() => setShowGenerateModal(true)}
-          disabled={approvedVersions.length === 0}
-          className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white text-xs font-semibold rounded-xl shadow-xs transition-colors shrink-0 disabled:opacity-50"
+          className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-lg shadow-2xs transition-colors shrink-0"
         >
           <Plus className="w-4 h-4" />
-          <span>Generate Brief from Approved Content</span>
+          <span>Derive New Brief from Approved Copy</span>
         </button>
       </div>
 
       {loading ? (
         <div className="py-20 text-center text-xs text-slate-400">Loading Creator Briefs...</div>
       ) : briefs.length === 0 ? (
-        <div className="py-16 bg-white rounded-2xl border border-slate-200 text-center text-xs text-slate-500 space-y-3">
-          <FileCheck className="w-10 h-10 text-slate-300 mx-auto" />
-          <div className="font-semibold text-slate-700">No Creator Briefs Generated Yet</div>
-          <p className="text-[11px] text-slate-400 max-w-sm mx-auto">
-            Once a content version is approved by a Brand Admin in the Correction Studio, you can generate an official Creator Brief here.
-          </p>
+        <div className="py-16 text-center text-xs text-slate-500 saas-card">
+          No creator briefs generated yet. Approve a marketing draft in the Correction Studio to derive a brief.
         </div>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          {/* Left Column: Brief Selection & Details (7 cols) */}
-          <div className="lg:col-span-7 space-y-4">
-            {/* Brief Selector Tabs */}
-            <div className="flex items-center gap-2 overflow-x-auto pb-1">
-              {briefs.map((b) => (
-                <button
-                  key={b.id}
-                  onClick={() => setSelectedBriefId(b.id)}
-                  className={`px-3.5 py-2 rounded-xl text-xs font-semibold text-left transition-all border shrink-0 ${
-                    selectedBriefId === b.id
-                      ? "bg-slate-900 text-white border-slate-900 shadow-xs"
-                      : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
-                  }`}
-                >
-                  <div className="truncate max-w-xs">{b.title}</div>
-                  <div className="text-[10px] text-slate-400 font-normal">{b.versionReference}</div>
-                </button>
-              ))}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+          {/* Left Column: Brief Selection List (4 Cols) */}
+          <div className="lg:col-span-4 saas-card p-3 space-y-2">
+            <div className="px-2 py-1 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+              Available Briefs ({briefs.length})
             </div>
-
-            {selectedBrief && (
-              <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-xs space-y-5">
-                <div className="border-b border-slate-100 pb-3">
-                  <span className="text-[10px] font-bold text-purple-700 bg-purple-50 px-2 py-0.5 rounded-md border border-purple-200 font-mono">
-                    OFFICIAL CREATOR BRIEF
-                  </span>
-                  <h2 className="text-base font-bold text-slate-900 mt-1">{selectedBrief.title}</h2>
-                  <p className="text-xs text-slate-500">{selectedBrief.versionReference}</p>
-                </div>
-
-                {/* Permitted Claims */}
-                <div>
-                  <h3 className="text-xs font-bold text-emerald-800 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                    <span>Permitted Claims (Approved for Use)</span>
-                  </h3>
-                  <div className="space-y-1.5">
-                    {permittedList.map((item: any, i: number) => (
-                      <div key={i} className="p-2.5 rounded-lg bg-emerald-50/60 border border-emerald-200 text-xs text-emerald-950 font-medium">
-                        &bull; &ldquo;{item.claim}&rdquo; — <span className="text-[11px] text-emerald-700">{item.text}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Prohibited Claims */}
-                <div>
-                  <h3 className="text-xs font-bold text-red-800 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                    <AlertOctagon className="w-3.5 h-3.5 text-red-600" />
-                    <span>Prohibited Claims (Strictly Banned)</span>
-                  </h3>
-                  <div className="space-y-1.5">
-                    {prohibitedList.map((item: any, i: number) => (
-                      <div key={i} className="p-2.5 rounded-lg bg-red-50/60 border border-red-200 text-xs text-red-950 font-medium">
-                        &times; &ldquo;{item.claim}&rdquo; — <span className="text-[11px] text-red-700">{item.rule}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Mandatory Disclosures */}
-                <div>
-                  <h3 className="text-xs font-bold text-purple-800 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                    <ShieldCheck className="w-3.5 h-3.5 text-purple-600" />
-                    <span>Mandatory Brand Disclosures (Must Include)</span>
-                  </h3>
-                  <div className="space-y-1.5">
-                    {disclosureList.map((item: any, i: number) => (
-                      <div key={i} className="p-2.5 rounded-lg bg-purple-50/60 border border-purple-200 text-xs text-purple-950 font-mono">
-                        &ldquo;{item.disclosure}&rdquo;
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Approved Facts */}
-                <div>
-                  <h3 className="text-xs font-bold text-blue-800 uppercase tracking-wider mb-2">
-                    Verified Product Facts
-                  </h3>
-                  <div className="space-y-1.5">
-                    {factsList.map((item: any, i: number) => (
-                      <div key={i} className="p-2 rounded-lg bg-slate-50 border border-slate-200 text-xs text-slate-700">
-                        <strong>{item.fact}:</strong> {item.detail}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
+            <div className="space-y-1.5">
+              {briefs.map((brief) => {
+                const isSelected = brief.id === selectedBrief?.id;
+                return (
+                  <button
+                    key={brief.id}
+                    onClick={() => {
+                      setSelectedBriefId(brief.id);
+                      setLastSubmissionResult(null);
+                    }}
+                    className={`w-full text-left p-3 rounded-lg border transition-all ${
+                      isSelected
+                        ? "bg-indigo-50/60 border-indigo-200 shadow-2xs"
+                        : "bg-white border-slate-200/80 hover:bg-slate-50 hover:border-slate-300"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between text-[10px] text-slate-400 mb-1">
+                      <span className="font-mono">{brief.id}</span>
+                      <span>{new Date(brief.createdAt).toLocaleDateString()}</span>
+                    </div>
+                    <h4 className="text-xs font-bold text-slate-900 leading-snug">{brief.title}</h4>
+                    <p className="text-[11px] text-slate-500 truncate mt-0.5">
+                      Target: {brief.creatorPlatform} • {brief.creatorHandle}
+                    </p>
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
-          {/* Right Column: External Creator Portal & Adaptation Drift Check (5 cols) */}
-          <div className="lg:col-span-5 space-y-4">
-            <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-xs space-y-4">
-              <div className="border-b border-slate-100 pb-2">
-                <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200 font-mono">
-                  EXTERNAL CREATOR PORTAL
-                </span>
-                <h3 className="text-sm font-bold text-slate-900 mt-1">Submit Final Creator Content</h3>
-                <p className="text-xs text-slate-500">
-                  Submitting as: <strong className="text-slate-800">{currentUser.name}</strong> ({currentUser.role})
-                </p>
-              </div>
-
-              {/* Creator Policy Reminder */}
-              <div className="p-3 bg-amber-50 rounded-xl border border-amber-200 text-xs text-amber-800 flex items-start gap-2">
-                <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-                <p className="text-[11px] leading-relaxed">
-                  <strong>Policy Enforcement:</strong> External creators cannot approve their own adaptations. Your draft will be automatically evaluated for adaptation drift against the brief.
-                </p>
-              </div>
-
-              {/* Quick Presets for Judge Evaluation */}
-              <div>
-                <label className="block text-[11px] font-semibold text-slate-700 mb-1">
-                  Try Sample Creator Adaptations:
-                </label>
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setCreatorCaption(
-                        "Morning workout complete! Loving the Verdanta Plant Crunch bar—it's an approved source of protein (11 g/100g) with 6 g cane sugar for real crunch. Contains added sugar. This product is not a substitute for a balanced diet."
-                      );
-                    }}
-                    className="p-2 text-left rounded-lg border border-emerald-200 bg-emerald-50 hover:bg-emerald-100 text-emerald-900 text-xs transition-colors"
-                  >
-                    <div className="font-semibold text-[11px]">Compliant Adaptation</div>
-                    <div className="text-[10px] text-emerald-600">Preserves rules & disclosure</div>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setCreatorCaption(
-                        "Morning fuel with Verdanta Plant Crunch! It's completely sugar-free and diabetes-friendly! Grab yours today."
-                      );
-                    }}
-                    className="p-2 text-left rounded-lg border border-red-200 bg-red-50 hover:bg-red-100 text-red-900 text-xs transition-colors"
-                  >
-                    <div className="font-semibold text-[11px]">Drift Violation Sample</div>
-                    <div className="text-[10px] text-red-600">Re-introduces sugar-free</div>
-                  </button>
-                </div>
-              </div>
-
-              {/* Form */}
-              <form onSubmit={handleSubmitAdaptation} className="space-y-3 text-xs">
-                <div>
-                  <label className="block font-medium text-slate-700 mb-1">Asset Title</label>
-                  <input
-                    type="text"
-                    required
-                    value={creatorTitle}
-                    onChange={(e) => setCreatorTitle(e.target.value)}
-                    className="w-full px-3 py-1.5 border border-slate-300 rounded-lg focus:outline-indigo-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block font-medium text-slate-700 mb-1">Adapted Caption / Script</label>
-                  <textarea
-                    rows={5}
-                    required
-                    value={creatorCaption}
-                    onChange={(e) => setCreatorCaption(e.target.value)}
-                    placeholder="Write or paste your adapted marketing caption..."
-                    className="w-full p-2.5 font-mono text-xs border border-slate-300 rounded-lg focus:outline-indigo-500 leading-relaxed"
-                  />
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={isSubmitting || !creatorCaption.trim()}
-                  className="w-full flex items-center justify-center gap-2 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl shadow-xs transition-colors disabled:opacity-50"
-                >
-                  <Send className="w-3.5 h-3.5" />
-                  <span>{isSubmitting ? "Evaluating Drift..." : "Submit for Verification & Sign-off"}</span>
-                </button>
-              </form>
-
-              {/* Adaptation Drift Result Card */}
-              {lastSubmissionResult && (
-                <div
-                  className={`p-4 rounded-xl border text-xs space-y-2 animate-in fade-in ${
-                    lastSubmissionResult.driftResult?.isCompliant
-                      ? "border-emerald-200 bg-emerald-50/70 text-emerald-900"
-                      : "border-red-200 bg-red-50/70 text-red-900"
-                  }`}
-                >
-                  <div className="flex items-center justify-between font-bold">
-                    <span>
-                      {lastSubmissionResult.driftResult?.isCompliant
-                        ? "Alignment Verified (100% Score)"
-                        : "Adaptation Drift Flagged"}
-                    </span>
-                    <span className="font-mono text-xs">
-                      Drift Score: {lastSubmissionResult.driftResult?.driftScore}/100
-                    </span>
-                  </div>
-
-                  <p className="text-[11px] leading-relaxed">
-                    {lastSubmissionResult.driftResult?.driftSummary}
-                  </p>
-
-                  {lastSubmissionResult.driftResult?.prohibitedClaimsDetected?.length > 0 && (
-                    <div className="text-[10px] text-red-700 font-semibold">
-                      Violation: {lastSubmissionResult.driftResult.prohibitedClaimsDetected.join(", ")}
+          {/* Right Column: Brief Document & Live Drift Check (8 Cols) */}
+          <div className="lg:col-span-8 space-y-5">
+            {selectedBrief && (
+              <>
+                {/* Brief Document Container */}
+                <div className="saas-card p-5 space-y-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-100">
+                    <div>
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-purple-50 text-purple-700 border border-purple-200 font-mono">
+                          APPROVED BRIEF
+                        </span>
+                        <h3 className="text-base font-bold text-slate-900">{selectedBrief.title}</h3>
+                      </div>
+                      <p className="text-xs text-slate-500">
+                        Target Influencer: <strong className="text-slate-700">{selectedBrief.creatorHandle}</strong> ({selectedBrief.creatorPlatform})
+                      </p>
                     </div>
-                  )}
 
-                  <div className="text-[10px] text-slate-500 pt-1 border-t border-slate-200/60">
-                    Submission logged as ID: {lastSubmissionResult.submission?.id}. Awaiting brand reviewer approval.
+                    <span className="text-xs font-medium text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-md border border-emerald-200 self-start sm:self-auto">
+                      ✓ Single Source of Truth Grounded
+                    </span>
+                  </div>
+
+                  {/* Objective & Key Message */}
+                  <div className="p-3 bg-slate-50 rounded-lg border border-slate-100 text-xs">
+                    <span className="font-semibold text-slate-800 block mb-1">Core Campaign Objective:</span>
+                    <p className="text-slate-600 leading-relaxed">{selectedBrief.keyMessage}</p>
+                  </div>
+
+                  {/* Document Grid: Permitted, Prohibited, Mandatory, Facts */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                    {/* Permitted Claims */}
+                    <div className="p-3 rounded-lg bg-emerald-50/40 border border-emerald-200">
+                      <span className="font-bold text-emerald-800 flex items-center gap-1.5 mb-2 text-xs">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                        Permitted Claims
+                      </span>
+                      <ul className="space-y-1 text-slate-700 text-[11px]">
+                        {selectedBrief.permittedClaims.map((claim: string, i: number) => (
+                          <li key={i} className="flex items-start gap-1.5">
+                            <span className="text-emerald-500 mt-0.5">•</span>
+                            <span>{claim}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+
+                    {/* Prohibited Claims */}
+                    <div className="p-3 rounded-lg bg-rose-50/40 border border-rose-200">
+                      <span className="font-bold text-rose-800 flex items-center gap-1.5 mb-2 text-xs">
+                        <AlertOctagon className="w-3.5 h-3.5 text-rose-600" />
+                        Strictly Prohibited Claims
+                      </span>
+                      <ul className="space-y-1 text-slate-700 text-[11px]">
+                        {selectedBrief.prohibitedClaims.map((claim: string, i: number) => (
+                          <li key={i} className="flex items-start gap-1.5">
+                            <span className="text-rose-500 mt-0.5">•</span>
+                            <span>{claim}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+
+                    {/* Mandatory Disclosures */}
+                    <div className="p-3 rounded-lg bg-purple-50/40 border border-purple-200">
+                      <span className="font-bold text-purple-800 flex items-center gap-1.5 mb-2 text-xs">
+                        <ShieldCheck className="w-3.5 h-3.5 text-purple-600" />
+                        Mandatory Disclosures
+                      </span>
+                      <ul className="space-y-1 text-slate-700 text-[11px]">
+                        {selectedBrief.mandatoryDisclosures.map((disc: string, i: number) => (
+                          <li key={i} className="flex items-start gap-1.5">
+                            <span className="text-purple-500 mt-0.5">•</span>
+                            <span>{disc}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+
+                    {/* Approved Technical Facts */}
+                    <div className="p-3 rounded-lg bg-slate-50 border border-slate-200">
+                      <span className="font-bold text-slate-800 flex items-center gap-1.5 mb-2 text-xs">
+                        <FileText className="w-3.5 h-3.5 text-slate-600" />
+                        Approved Product Facts
+                      </span>
+                      <ul className="space-y-1 text-slate-700 text-[11px]">
+                        {selectedBrief.approvedFacts.map((fact: string, i: number) => (
+                          <li key={i} className="flex items-start gap-1.5">
+                            <span className="text-slate-400 mt-0.5">•</span>
+                            <span>{fact}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
                   </div>
                 </div>
-              )}
-            </div>
 
-            {/* Past Submissions for this Brief */}
-            {selectedBrief?.creatorSubmissions?.length > 0 && (
-              <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs space-y-3">
-                <h4 className="text-xs font-bold text-slate-900">
-                  Past Creator Submissions ({selectedBrief.creatorSubmissions.length})
-                </h4>
-                <div className="space-y-2">
-                  {selectedBrief.creatorSubmissions.map((sub: any) => {
-                    const drift = sub.adaptationDriftFlags ? JSON.parse(sub.adaptationDriftFlags) : null;
-                    return (
-                      <div key={sub.id} className="p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs space-y-1">
-                        <div className="flex items-center justify-between">
-                          <span className="font-semibold text-slate-800">{sub.creator?.name}</span>
-                          <span
-                            className={`text-[9px] font-bold px-1.5 py-0.5 rounded-sm uppercase ${
-                              sub.status === "APPROVED"
-                                ? "bg-emerald-100 text-emerald-800"
-                                : sub.status === "CHANGES_REQUESTED"
-                                ? "bg-red-100 text-red-800"
-                                : "bg-blue-100 text-blue-800"
-                            }`}
-                          >
-                            {sub.status}
+                {/* Creator Final Adaptation Drift Check */}
+                <div className="saas-card p-5 space-y-4">
+                  <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+                    <div>
+                      <h4 className="text-xs font-bold text-slate-900">
+                        Closed-Loop Adaptation Drift Checker
+                      </h4>
+                      <p className="text-[11px] text-slate-500">
+                        Creators paste their adapted social media copy before publishing to verify alignment with brief rules
+                      </p>
+                    </div>
+
+                    <span className="text-[10px] text-indigo-700 font-semibold bg-indigo-50 px-2 py-0.5 rounded border border-indigo-100">
+                      Policy Rule 13
+                    </span>
+                  </div>
+
+                  <form onSubmit={handleCreatorCheck} className="space-y-3">
+                    <div>
+                      <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                        Adapted Creator Caption Draft:
+                      </label>
+                      <textarea
+                        required
+                        rows={3}
+                        value={creatorCaption}
+                        onChange={(e) => setCreatorCaption(e.target.value)}
+                        placeholder="e.g., Loving this new Verdanta bar! Totally sugar-free and will cure low blood sugar instantly!"
+                        className="w-full p-2.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <div className="text-[11px] text-slate-500">
+                        Submitting as: <strong className="text-slate-800">{currentUser.name}</strong> ({currentUser.role})
+                      </div>
+
+                      <button
+                        type="submit"
+                        disabled={isSubmitting || !creatorCaption.trim()}
+                        className="flex items-center gap-1.5 px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-lg shadow-2xs transition-colors disabled:opacity-50"
+                      >
+                        <Send className="w-3.5 h-3.5" />
+                        <span>{isSubmitting ? "Checking Drift..." : "Run Adaptation Drift Check"}</span>
+                      </button>
+                    </div>
+                  </form>
+
+                  {/* Drift Check Result */}
+                  {lastSubmissionResult && (
+                    <div
+                      className={`p-4 rounded-lg border text-xs space-y-2.5 animate-in fade-in duration-150 ${
+                        lastSubmissionResult.driftResult.isCompliant
+                          ? "bg-emerald-50/50 border-emerald-200 text-emerald-900"
+                          : "bg-rose-50/50 border-rose-200 text-rose-900"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          {lastSubmissionResult.driftResult.isCompliant ? (
+                            <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                          ) : (
+                            <AlertOctagon className="w-4 h-4 text-rose-600" />
+                          )}
+                          <span className="font-bold text-sm">
+                            {lastSubmissionResult.driftResult.isCompliant
+                              ? "Compliant Adaptation (Approved)"
+                              : "Adaptation Drift Detected (Changes Requested)"}
                           </span>
                         </div>
-                        <p className="text-[11px] text-slate-600 font-mono italic">&ldquo;{sub.caption}&rdquo;</p>
-                        {drift && (
-                          <div className="text-[10px] text-slate-500">
-                            Drift Score: {drift.driftScore}/100 • {drift.isCompliant ? "Compliant" : "Drift Flagged"}
-                          </div>
-                        )}
+
+                        <span className="font-bold text-sm">
+                          Alignment Score: {lastSubmissionResult.driftResult.driftScore}/100
+                        </span>
                       </div>
-                    );
-                  })}
+
+                      {/* Drift Issues Breakdown */}
+                      {!lastSubmissionResult.driftResult.isCompliant && (
+                        <div className="space-y-1.5 pt-1 text-slate-700">
+                          {lastSubmissionResult.driftResult.prohibitedClaimsDetected?.length > 0 && (
+                            <div className="p-2 bg-white/80 rounded border border-rose-100 text-[11px]">
+                              <strong className="text-rose-700">Prohibited Wording Found: </strong>
+                              {lastSubmissionResult.driftResult.prohibitedClaimsDetected.join(", ")}
+                            </div>
+                          )}
+
+                          {lastSubmissionResult.driftResult.missingDisclosuresDetected?.length > 0 && (
+                            <div className="p-2 bg-white/80 rounded border border-rose-100 text-[11px]">
+                              <strong className="text-rose-700">Missing Mandatory Disclosure: </strong>
+                              {lastSubmissionResult.driftResult.missingDisclosuresDetected.join("; ")}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
-              </div>
+              </>
             )}
           </div>
         </div>
@@ -445,42 +405,55 @@ export const CreatorBriefsView: React.FC<CreatorBriefsProps> = ({ currentUser })
 
       {/* Generate Brief Modal */}
       {showGenerateModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full border border-slate-200 p-6 space-y-4">
-            <h2 className="text-sm font-bold text-slate-900">Generate Creator Brief from Approved Version</h2>
-            <p className="text-xs text-slate-600 leading-relaxed">
-              Select an approved content version. The brief will extract permitted claims, prohibited claims, mandatory disclosures, and verified facts.
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs">
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full border border-slate-200 p-5 space-y-3 text-xs">
+            <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+              <h3 className="text-sm font-bold text-slate-900">Derive Creator Brief</h3>
+              <button onClick={() => setShowGenerateModal(false)} className="text-slate-400 hover:text-slate-600">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <p className="text-slate-600 leading-relaxed">
+              Creator briefs can only be derived from approved marketing versions. Select an approved version below:
             </p>
 
-            <form onSubmit={handleGenerateBrief} className="space-y-4 text-xs">
+            <form onSubmit={handleGenerateBrief} className="space-y-3">
               <div>
-                <label className="block font-medium text-slate-700 mb-1">Approved Source Content</label>
-                <select
-                  value={selectedVersionId}
-                  onChange={(e) => setSelectedVersionId(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-indigo-500 bg-white"
-                >
-                  {approvedVersions.map((v) => (
-                    <option key={v.versionId} value={v.versionId}>
-                      {v.campaignName} — {v.title}
-                    </option>
-                  ))}
-                </select>
+                <label className="block font-semibold text-slate-700 mb-1">Approved Content Version</label>
+                {approvedVersions.length === 0 ? (
+                  <p className="text-rose-600 text-[11px]">
+                    No approved content versions exist yet. Please approve a draft in Correction Studio first.
+                  </p>
+                ) : (
+                  <select
+                    value={selectedVersionId}
+                    onChange={(e) => setSelectedVersionId(e.target.value)}
+                    className="w-full px-3 py-1.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                  >
+                    {approvedVersions.map((v) => (
+                      <option key={v.versionId} value={v.versionId}>
+                        {v.title} ({v.campaignName})
+                      </option>
+                    ))}
+                  </select>
+                )}
               </div>
 
               <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
                 <button
                   type="button"
                   onClick={() => setShowGenerateModal(false)}
-                  className="px-3.5 py-1.5 rounded-lg text-xs text-slate-600 hover:bg-slate-100"
+                  className="px-3 py-1.5 text-slate-600 hover:bg-slate-50 border border-slate-200 rounded-lg font-medium"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-1.5 rounded-lg text-xs font-semibold text-white bg-purple-600 hover:bg-purple-700"
+                  disabled={approvedVersions.length === 0}
+                  className="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg shadow-2xs disabled:opacity-50"
                 >
-                  Create Brief
+                  Generate Brief
                 </button>
               </div>
             </form>

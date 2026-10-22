@@ -17,10 +17,13 @@ import {
   FileCheck,
   Check,
   X,
-  MessageSquare,
   FileText,
   AlertCircle,
   ExternalLink,
+  ShieldCheck,
+  ChevronRight,
+  Info,
+  Database,
 } from "lucide-react";
 import { UserProfile } from "../Navbar";
 
@@ -81,7 +84,6 @@ export const CorrectionStudioView: React.FC<CorrectionStudioProps> = ({
     if (contentId) {
       fetchContentDetails(contentId);
     } else {
-      // Fetch default sample content if none selected
       fetch("/api/content")
         .then((r) => r.json())
         .then((items) => {
@@ -97,16 +99,16 @@ export const CorrectionStudioView: React.FC<CorrectionStudioProps> = ({
 
   if (loading) {
     return (
-      <div className="py-20 flex flex-col items-center justify-center text-slate-400">
-        <div className="w-8 h-8 border-3 border-indigo-600 border-t-transparent rounded-full animate-spin mb-3"></div>
-        <p className="text-xs font-medium">Opening Correction Studio & Verification Trace...</p>
+      <div className="py-24 flex flex-col items-center justify-center text-slate-400">
+        <div className="w-6 h-6 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin mb-3"></div>
+        <p className="text-xs font-medium text-slate-500">Loading Correction Studio & verification trace...</p>
       </div>
     );
   }
 
   if (!content) {
     return (
-      <div className="p-12 bg-white rounded-2xl border border-slate-200 text-center text-xs text-slate-500">
+      <div className="p-12 saas-card text-center text-xs text-slate-500">
         No content item selected. Please select a campaign from the Content Reviews tab.
       </div>
     );
@@ -129,17 +131,14 @@ export const CorrectionStudioView: React.FC<CorrectionStudioProps> = ({
   const handleApplyCorrection = async (finding: any) => {
     if (!finding.suggestedCorrection) return;
 
-    // Replace affected text in draft editor
     let newDraft = editedText;
     if (newDraft.includes(finding.affectedText)) {
       newDraft = newDraft.replace(finding.affectedText, finding.suggestedCorrection);
     } else {
-      // Append correction if affectedText was end of text or not found verbatim
       newDraft = `${newDraft.trim()} ${finding.suggestedCorrection}`;
     }
     setEditedText(newDraft);
 
-    // Update finding resolution status to ACCEPTED_CORRECTION
     try {
       await fetch(`/api/findings/${finding.id}`, {
         method: "PATCH",
@@ -152,11 +151,10 @@ export const CorrectionStudioView: React.FC<CorrectionStudioProps> = ({
         }),
       });
 
-      // Update local state
       finding.resolutionStatus = "ACCEPTED_CORRECTION";
       setStatusMessage({
         type: "success",
-        text: `Applied correction: &ldquo;${finding.suggestedCorrection}&rdquo;. Re-run verification to lock into new version.`,
+        text: `Applied correction: "${finding.suggestedCorrection}". Re-run verification to lock into new version.`,
       });
     } catch (e) {
       console.error(e);
@@ -197,7 +195,7 @@ export const CorrectionStudioView: React.FC<CorrectionStudioProps> = ({
     }
   };
 
-  // Re-run verification: creates next version (v2, v3, etc.) and preserves prior analysis!
+  // Re-run verification: creates next version (v2, v3, etc.) and preserves prior analysis
   const handleReRunVerification = async () => {
     setIsVerifying(true);
     setStatusMessage(null);
@@ -216,13 +214,12 @@ export const CorrectionStudioView: React.FC<CorrectionStudioProps> = ({
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to create revised version.");
 
-      // Re-fetch entire content item
       await fetchContentDetails(content.id);
-      setSelectedVersionIndex(0); // Switch to newly created version
+      setSelectedVersionIndex(0);
       setChangeNotes("");
       setStatusMessage({
         type: "success",
-        text: `New Version ${data.version.versionNumber} created and verified! Prior versions and analysis history preserved.`,
+        text: `Version ${data.version.versionNumber} created and verified! Prior version and analysis history preserved.`,
       });
       if (onRefreshList) onRefreshList();
     } catch (err: any) {
@@ -233,7 +230,10 @@ export const CorrectionStudioView: React.FC<CorrectionStudioProps> = ({
   };
 
   // Review decision (Approve, Request Changes, Override, Reject)
-  const handleReviewDecision = async (decision: "APPROVED" | "CHANGES_REQUESTED" | "OVERRIDE" | "REJECTED", notes?: string) => {
+  const handleReviewDecision = async (
+    decision: "APPROVED" | "CHANGES_REQUESTED" | "OVERRIDE" | "REJECTED",
+    notes?: string
+  ) => {
     setStatusMessage(null);
     try {
       const res = await fetch(`/api/content/${content.id}/review`, {
@@ -271,12 +271,12 @@ export const CorrectionStudioView: React.FC<CorrectionStudioProps> = ({
     const currWords = curr.split(/\s+/);
 
     return (
-      <div className="space-y-4 font-mono text-xs leading-relaxed">
+      <div className="space-y-3 font-mono text-xs leading-relaxed">
         <div>
-          <span className="text-[10px] font-bold text-red-700 uppercase tracking-wider block mb-1">
+          <span className="text-[10px] font-bold text-rose-700 uppercase tracking-wider block mb-1">
             Original Text (v1):
           </span>
-          <div className="p-3 bg-red-50/50 rounded-xl border border-red-200 text-slate-800">
+          <div className="p-3 bg-rose-50/50 rounded-lg border border-rose-200 text-slate-800">
             {origWords.map((word, i) => {
               const removed = !currWords.includes(word);
               return removed ? (
@@ -296,7 +296,7 @@ export const CorrectionStudioView: React.FC<CorrectionStudioProps> = ({
           <span className="text-[10px] font-bold text-emerald-700 uppercase tracking-wider block mb-1">
             Revised Text (v{activeVersion.versionNumber}):
           </span>
-          <div className="p-3 bg-emerald-50/50 rounded-xl border border-emerald-200 text-slate-800">
+          <div className="p-3 bg-emerald-50/50 rounded-lg border border-emerald-200 text-slate-800">
             {currWords.map((word, i) => {
               const added = !origWords.includes(word);
               return added ? (
@@ -315,56 +315,63 @@ export const CorrectionStudioView: React.FC<CorrectionStudioProps> = ({
     );
   };
 
-  const getFindingIcon = (type: string) => {
+  const getFindingBadge = (type: string) => {
     switch (type) {
       case "VERIFIED_CONTRADICTION":
-        return <AlertOctagon className="w-4 h-4 text-red-600" />;
+        return { label: "Verified Contradiction", color: "bg-rose-50 text-rose-700 border-rose-200" };
       case "UNSUPPORTED_CLAIM":
-        return <HelpCircle className="w-4 h-4 text-amber-600" />;
+        return { label: "Unsupported Claim", color: "bg-sky-50 text-sky-700 border-sky-200" };
       case "INSUFFICIENT_EVIDENCE":
-        return <ShieldAlert className="w-4 h-4 text-purple-600" />;
+        return { label: "Insufficient Evidence", color: "bg-purple-50 text-purple-700 border-purple-200" };
       case "POSSIBLE_RISK":
-        return <AlertTriangle className="w-4 h-4 text-orange-600" />;
+        return { label: "Policy Risk / Disclosure", color: "bg-amber-50 text-amber-700 border-amber-200" };
       default:
-        return <Lightbulb className="w-4 h-4 text-blue-600" />;
+        return { label: "Style Alignment", color: "bg-slate-50 text-slate-700 border-slate-200" };
     }
   };
 
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case "APPROVED":
+        return { label: "Approved", color: "bg-emerald-50 text-emerald-700 border-emerald-200" };
+      case "CHANGES_REQUESTED":
+        return { label: "Changes Requested", color: "bg-amber-50 text-amber-700 border-amber-200" };
+      case "REJECTED":
+        return { label: "Rejected", color: "bg-rose-50 text-rose-700 border-rose-200" };
+      default:
+        return { label: "Submitted", color: "bg-blue-50 text-blue-700 border-blue-200" };
+    }
+  };
+
+  const statusBadge = getStatusBadge(activeVersion.status);
+
   return (
-    <div className="space-y-5 animate-in fade-in duration-150">
-      {/* Studio Header & Version Selector */}
-      <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs flex flex-wrap items-center justify-between gap-4">
+    <div className="space-y-5">
+      {/* Top Workspace Header */}
+      <div className="saas-card p-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2 mb-1">
-            <span className="text-xs font-semibold px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-700 border border-indigo-200 font-mono">
+          <div className="flex items-center gap-2 mb-1 flex-wrap">
+            <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 border border-indigo-200 font-mono">
               STUDIO
             </span>
-            <h1 className="text-lg font-bold text-slate-900">{content.title}</h1>
-            <span
-              className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md border ${
-                activeVersion.status === "APPROVED"
-                  ? "bg-emerald-100 text-emerald-800 border-emerald-200"
-                  : activeVersion.status === "CHANGES_REQUESTED"
-                  ? "bg-amber-100 text-amber-800 border-amber-200"
-                  : "bg-blue-100 text-blue-800 border-blue-200"
-              }`}
-            >
-              {activeVersion.status}
+            <h2 className="text-base font-bold text-slate-900 tracking-tight">{content.title}</h2>
+            <span className={`text-[10px] font-semibold px-2 py-0.5 rounded border ${statusBadge.color}`}>
+              {statusBadge.label}
             </span>
           </div>
-          <div className="text-xs text-slate-500 flex items-center gap-2">
+          <div className="text-xs text-slate-500 flex items-center gap-2 flex-wrap">
             <span>Campaign: <strong className="text-slate-700">{content.campaignName}</strong></span>
             <span>•</span>
-            <span>Brand: {content.brand?.name}</span>
+            <span>Brand: {content.brand?.name || "Verdanta Foods"}</span>
             <span>•</span>
-            <span>Original Submitter: {content.submitter?.name} ({content.submitter?.role})</span>
+            <span>Author: {content.submitter?.name}</span>
           </div>
         </div>
 
         {/* Version Switcher Tabs */}
-        <div className="flex items-center gap-2 bg-slate-100 p-1 rounded-xl border border-slate-200 text-xs">
+        <div className="flex items-center gap-1.5 bg-slate-100/90 p-1 rounded-lg border border-slate-200 text-xs self-start md:self-auto">
           <span className="text-[10px] text-slate-400 font-semibold px-2 uppercase tracking-wider">
-            History:
+            Version:
           </span>
           {versions.map((ver: any, idx: number) => (
             <button
@@ -373,9 +380,9 @@ export const CorrectionStudioView: React.FC<CorrectionStudioProps> = ({
                 setSelectedVersionIndex(idx);
                 setEditedText(ver.textContent);
               }}
-              className={`px-3 py-1 rounded-lg font-semibold transition-all ${
+              className={`px-2.5 py-1 rounded-md font-semibold transition-all ${
                 selectedVersionIndex === idx
-                  ? "bg-white text-indigo-700 shadow-xs border border-slate-200"
+                  ? "bg-white text-indigo-700 shadow-2xs border border-slate-200"
                   : "text-slate-600 hover:text-slate-900"
               }`}
             >
@@ -388,286 +395,272 @@ export const CorrectionStudioView: React.FC<CorrectionStudioProps> = ({
       {/* Notification Banner */}
       {statusMessage && (
         <div
-          className={`p-3.5 rounded-xl border text-xs flex items-center justify-between ${
+          className={`p-3 rounded-lg text-xs font-medium flex items-center justify-between border ${
             statusMessage.type === "success"
-              ? "bg-emerald-50 border-emerald-200 text-emerald-800"
-              : "bg-red-50 border-red-200 text-red-800"
+              ? "bg-emerald-50 text-emerald-800 border-emerald-200"
+              : "bg-rose-50 text-rose-800 border-rose-200"
           }`}
         >
-          <div className="flex items-center gap-2">
-            {statusMessage.type === "success" ? (
-              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-            ) : (
-              <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
-            )}
-            <span dangerouslySetInnerHTML={{ __html: statusMessage.text }} />
-          </div>
+          <span>{statusMessage.text}</span>
           <button onClick={() => setStatusMessage(null)} className="text-slate-400 hover:text-slate-600">
-            <X className="w-4 h-4" />
+            <X className="w-3.5 h-3.5" />
           </button>
         </div>
       )}
 
-      {/* Main Studio Split Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
-        {/* Left Column: Content Editor & Diff View (7 cols) */}
-        <div className="lg:col-span-7 bg-white rounded-2xl border border-slate-200 shadow-xs flex flex-col overflow-hidden">
-          {/* Editor Header Bar */}
-          <div className="px-5 py-3 border-b border-slate-200 bg-slate-50/70 flex items-center justify-between">
-            <div className="flex items-center gap-2 text-xs font-semibold text-slate-800">
-              <FileEdit className="w-4 h-4 text-indigo-600" />
-              <span>Draft Content Editor (v{activeVersion.versionNumber})</span>
+      {/* Main Split-Pane Workspace */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+        {/* Left Pane: Content Editor & Visual Diff (5 Cols) */}
+        <div className="lg:col-span-5 saas-card p-4 space-y-4">
+          <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+            <div className="flex items-center gap-2">
+              <FileEdit className="w-4 h-4 text-slate-500" />
+              <h3 className="text-xs font-bold text-slate-900">
+                Draft Copy (v{activeVersion.versionNumber})
+              </h3>
             </div>
 
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setShowDiff(!showDiff)}
-                className={`flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-lg border transition-colors ${
+                className={`flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-lg border transition-colors ${
                   showDiff
-                    ? "bg-indigo-50 border-indigo-200 text-indigo-700"
-                    : "bg-white border-slate-200 text-slate-600 hover:bg-slate-100"
+                    ? "bg-indigo-50 text-indigo-700 border-indigo-200"
+                    : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
                 }`}
               >
                 <GitCompare className="w-3.5 h-3.5" />
-                <span>{showDiff ? "Hide Diff" : "Compare v1 Diff"}</span>
+                <span>{showDiff ? "Editor" : "Diff View"}</span>
               </button>
             </div>
           </div>
 
-          {/* Editor Area */}
-          <div className="p-5 flex-1 space-y-4">
-            {showDiff ? (
-              renderSimpleDiff(versions[versions.length - 1]?.textContent || editedText, editedText)
-            ) : (
-              <div>
+          {/* Editor Body */}
+          {showDiff ? (
+            <div className="p-1">
+              {renderSimpleDiff(versions[versions.length - 1]?.textContent || "", editedText)}
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <div className="relative">
                 <textarea
                   rows={8}
                   value={editedText}
                   onChange={(e) => setEditedText(e.target.value)}
-                  className="w-full p-3.5 text-xs font-mono border border-slate-300 rounded-xl focus:outline-indigo-500 bg-slate-50/30 focus:bg-white leading-relaxed resize-y"
-                  placeholder="Marketing copy..."
+                  className="w-full p-3 text-xs leading-relaxed text-slate-900 bg-slate-50/50 border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500 font-sans"
+                  placeholder="Enter marketing caption draft..."
                 />
-                <div className="flex items-center justify-between mt-1 text-[11px] text-slate-400">
-                  <span>Tip: Apply suggested corrections from the findings cards on the right.</span>
-                  <span>{editedText.length} characters</span>
+                <div className="text-[10px] text-slate-400 text-right mt-1">
+                  {editedText.length} characters • {editedText.split(/\s+/).filter(Boolean).length} words
                 </div>
               </div>
-            )}
 
-            {/* Re-verify & Versioning Panel */}
-            <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-3">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Revision Change Notes (Preserved in Audit Log)
+                <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                  Revision Notes (Recorded to Audit Trail)
                 </label>
                 <input
                   type="text"
                   value={changeNotes}
                   onChange={(e) => setChangeNotes(e.target.value)}
-                  placeholder="e.g. Corrected protein claim to 11g/100g and added mandatory disclosure."
-                  className="w-full px-3 py-1.5 text-xs border border-slate-300 rounded-lg focus:outline-indigo-500 bg-white"
+                  placeholder="e.g., Substituted prohibited sugar-free claim with approved 6g formulation."
+                  className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500"
                 />
               </div>
 
-              <div className="flex items-center justify-between pt-1">
-                <span className="text-[11px] text-slate-500">
-                  Re-verifying creates <strong className="text-slate-800">Version {content.currentVersionNumber + 1}</strong> without erasing prior runs.
-                </span>
-
-                <button
-                  onClick={handleReRunVerification}
-                  disabled={isVerifying}
-                  className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-xl shadow-xs transition-colors disabled:opacity-50"
-                >
-                  <RefreshCw className={`w-3.5 h-3.5 ${isVerifying ? "animate-spin" : ""}`} />
-                  <span>{isVerifying ? "Verifying..." : "Re-Run Verification"}</span>
-                </button>
-              </div>
+              <button
+                onClick={handleReRunVerification}
+                disabled={isVerifying || editedText === activeVersion.textContent}
+                className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-lg shadow-2xs transition-colors disabled:opacity-40"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${isVerifying ? "animate-spin" : ""}`} />
+                <span>{isVerifying ? "Verifying..." : `Save as v${versions.length + 1} & Re-Verify`}</span>
+              </button>
             </div>
-          </div>
+          )}
+
+          {/* Prior Version Notes */}
+          {activeVersion.changeNotes && (
+            <div className="p-2.5 rounded-lg bg-slate-50 border border-slate-100 text-[11px] text-slate-600">
+              <span className="font-semibold text-slate-800">Version Notes: </span>
+              {activeVersion.changeNotes}
+            </div>
+          )}
         </div>
 
-        {/* Right Column: Findings & Verified Evidence (5 cols) */}
-        <div className="lg:col-span-5 bg-white rounded-2xl border border-slate-200 shadow-xs flex flex-col overflow-hidden max-h-[800px]">
-          {/* Findings Header */}
-          <div className="px-5 py-3 border-b border-slate-200 bg-slate-50/70 flex items-center justify-between">
-            <div className="flex items-center gap-2 text-xs font-semibold text-slate-800">
-              <ShieldAlert className="w-4 h-4 text-indigo-600" />
-              <span>Evidence-Backed Findings</span>
-              <span className="px-2 py-0.2 rounded-full text-[10px] font-bold bg-indigo-100 text-indigo-800">
-                {findings.length}
-              </span>
+        {/* Right Pane: Evidence & Findings Workspace (7 Cols) */}
+        <div className="lg:col-span-7 saas-card p-4 space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-slate-100">
+            <div>
+              <h3 className="text-xs font-bold text-slate-900">
+                Verification Findings & Evidence Citations
+              </h3>
+              <p className="text-[11px] text-slate-500">
+                Application-side verified citations from brand source of truth
+              </p>
             </div>
 
-            <select
-              value={activeFindingFilter}
-              onChange={(e) => setActiveFindingFilter(e.target.value)}
-              className="text-[11px] border border-slate-200 rounded-lg px-2 py-1 bg-white text-slate-600 focus:outline-hidden"
-            >
-              <option value="ALL">All Types ({findings.length})</option>
-              <option value="HIGH">High Severity Only</option>
-              <option value="UNRESOLVED">Open / Unresolved</option>
-              <option value="VERIFIED_CONTRADICTION">Contradictions</option>
-              <option value="UNSUPPORTED_CLAIM">Unsupported Claims</option>
-              <option value="INSUFFICIENT_EVIDENCE">Insufficient Evidence</option>
-              <option value="POSSIBLE_RISK">Possible Risk</option>
-              <option value="STYLE_SUGGESTION">Style Suggestion</option>
-            </select>
+            {/* Finding Filter Tabs */}
+            <div className="flex items-center gap-1 text-[11px] overflow-x-auto pb-1 sm:pb-0">
+              {[
+                { id: "ALL", label: `All (${findings.length})` },
+                { id: "HIGH", label: `High Risk (${findings.filter((f: any) => f.severity === "HIGH").length})` },
+                { id: "UNRESOLVED", label: `Open (${findings.filter((f: any) => f.resolutionStatus === "OPEN").length})` },
+              ].map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveFindingFilter(tab.id)}
+                  className={`px-2 py-0.5 rounded font-medium transition-colors ${
+                    activeFindingFilter === tab.id
+                      ? "bg-slate-900 text-white"
+                      : "text-slate-600 hover:bg-slate-100"
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
           </div>
 
-          {/* Findings Cards List */}
-          <div className="p-4 overflow-y-auto space-y-3.5 flex-1">
+          {/* Finding Cards List */}
+          <div className="space-y-3">
             {filteredFindings.length === 0 ? (
-              <div className="py-16 text-center text-xs text-slate-400">
-                <CheckCircle2 className="w-8 h-8 text-emerald-500 mx-auto mb-2 opacity-80" />
-                <div className="font-semibold text-slate-700">No Policy Violations Found</div>
-                <div>This version satisfies verified brand truth specifications.</div>
+              <div className="p-8 text-center bg-emerald-50/50 rounded-lg border border-emerald-100">
+                <CheckCircle2 className="w-8 h-8 text-emerald-600 mx-auto mb-2" />
+                <h4 className="text-xs font-bold text-emerald-900">Zero Open Violations</h4>
+                <p className="text-[11px] text-emerald-700 mt-0.5">
+                  This version strictly complies with all Verdanta Foods truth items and policies.
+                </p>
               </div>
             ) : (
               filteredFindings.map((finding: any) => {
-                const isSelected = selectedFindingId === finding.id;
+                const typeBadge = getFindingBadge(finding.type);
+                const isResolved = finding.resolutionStatus === "ACCEPTED_CORRECTION";
                 const isDismissed = finding.resolutionStatus === "DISMISSED";
-                const isCorrected = finding.resolutionStatus === "ACCEPTED_CORRECTION";
 
                 return (
                   <div
                     key={finding.id}
-                    onClick={() => setSelectedFindingId(finding.id)}
-                    className={`p-4 rounded-xl border transition-all text-xs space-y-2.5 ${
-                      isCorrected
-                        ? "border-emerald-200 bg-emerald-50/30 opacity-75"
+                    className={`p-3.5 rounded-lg border transition-all ${
+                      isResolved
+                        ? "bg-emerald-50/40 border-emerald-200 opacity-75"
                         : isDismissed
-                        ? "border-slate-200 bg-slate-50/50 opacity-60 line-through"
-                        : finding.severity === "HIGH"
-                        ? "border-red-200 bg-red-50/20 hover:border-red-300"
-                        : "border-slate-200 bg-white hover:border-indigo-300"
-                    } ${isSelected ? "ring-2 ring-indigo-500 shadow-xs" : ""}`}
+                        ? "bg-slate-50 border-slate-200 opacity-60"
+                        : "bg-white border-slate-200/90 shadow-2xs hover:border-slate-300"
+                    }`}
                   >
-                    {/* Finding Header */}
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-1.5 font-bold text-[11px] text-slate-900">
-                        {getFindingIcon(finding.type)}
-                        <span>{finding.type.replace(/_/g, " ")}</span>
-                      </div>
-
-                      <div className="flex items-center gap-1.5">
-                        <span
-                          className={`text-[9px] font-bold px-1.5 py-0.5 rounded-sm uppercase tracking-wider ${
-                            finding.severity === "HIGH"
-                              ? "bg-red-100 text-red-800"
-                              : finding.severity === "MEDIUM"
-                              ? "bg-amber-100 text-amber-800"
-                              : "bg-blue-100 text-blue-800"
-                          }`}
-                        >
+                    {/* Header: Type, Severity, Resolution Badge */}
+                    <div className="flex items-start justify-between gap-2 mb-2">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className={`text-[10px] font-semibold px-2 py-0.5 rounded border ${typeBadge.color}`}>
+                          {typeBadge.label}
+                        </span>
+                        <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-slate-100 text-slate-700 font-mono">
                           {finding.severity}
                         </span>
-
-                        {isCorrected && (
-                          <span className="text-[9px] font-bold text-emerald-700 bg-emerald-100 px-1.5 py-0.5 rounded-sm">
-                            CORRECTED
-                          </span>
-                        )}
-                        {isDismissed && (
-                          <span className="text-[9px] font-bold text-slate-600 bg-slate-200 px-1.5 py-0.5 rounded-sm">
-                            DISMISSED
-                          </span>
-                        )}
                       </div>
+
+                      {isResolved && (
+                        <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                          Correction Applied
+                        </span>
+                      )}
+                      {isDismissed && (
+                        <span className="text-[10px] font-semibold text-slate-600 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
+                          Dismissed
+                        </span>
+                      )}
                     </div>
 
-                    {/* Affected Snippet */}
-                    <div className="p-2 rounded-lg bg-slate-100 font-mono text-[11px] text-slate-800 border border-slate-200/80">
-                      <span className="text-[9px] text-slate-400 block font-sans font-semibold uppercase tracking-wider mb-0.5">
-                        Flagged in draft:
+                    {/* Affected Quote */}
+                    <div className="mb-2">
+                      <span className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold block mb-0.5">
+                        Flagged Excerpt:
                       </span>
-                      &ldquo;{finding.affectedText}&rdquo;
+                      <p className="text-xs font-semibold text-slate-900 bg-rose-50/60 text-rose-950 px-2.5 py-1.5 rounded border border-rose-100">
+                        &ldquo;{finding.affectedText}&rdquo;
+                      </p>
                     </div>
 
                     {/* Explanation */}
-                    <p className="text-slate-600 text-[11px] leading-relaxed">{finding.explanation}</p>
+                    <p className="text-xs text-slate-600 mb-2 leading-relaxed">{finding.explanation}</p>
 
-                    {/* Evidence Citation Block (Crucial Verification Feature) */}
-                    {finding.sourceReferenceId && (
-                      <div className="p-2.5 rounded-lg border text-[11px] space-y-1.5 bg-slate-50/80 border-slate-200">
-                        <div className="flex items-center justify-between">
-                          <span className="font-mono text-[10px] font-bold text-slate-700">
-                            Citing: {finding.sourceReferenceId}
+                    {/* Citation & Ground Truth Box */}
+                    <div className="p-2.5 rounded-lg bg-slate-50 border border-slate-100 text-xs space-y-1.5 mb-2.5">
+                      <div className="flex items-center justify-between text-[11px]">
+                        <span className="font-semibold text-slate-700 flex items-center gap-1.5">
+                          <Database className="w-3.5 h-3.5 text-indigo-600" />
+                          Source: {finding.sourceReferenceId}
+                        </span>
+
+                        {/* Citation Validity Badge (STRICT APPLICATION-SIDE CHECK) */}
+                        {finding.citationValid ? (
+                          <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200 flex items-center gap-1">
+                            <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                            Verified Evidence
                           </span>
-
-                          {/* Non-negotiable Application-Side Citation Verification Badge */}
-                          {finding.citationValid ? (
-                            <span className="inline-flex items-center gap-1 text-[9px] font-bold text-emerald-700 bg-emerald-100 px-1.5 py-0.5 rounded-sm">
-                              <CheckCircle2 className="w-3 h-3" />
-                              <span>Verified Citation</span>
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center gap-1 text-[9px] font-bold text-red-700 bg-red-100 px-1.5 py-0.5 rounded-sm">
-                              <AlertCircle className="w-3 h-3" />
-                              <span>
-                                {finding.evidenceStatus === "EXPIRED_EVIDENCE"
-                                  ? "Expired Evidence"
-                                  : "Unverified Citation"}
-                              </span>
-                            </span>
-                          )}
-                        </div>
-
-                        {finding.quotedExcerpt && (
-                          <p className="font-mono text-[10px] text-slate-600 italic bg-white p-1.5 rounded-md border border-slate-100">
-                            &ldquo;{finding.quotedExcerpt}&rdquo;
-                          </p>
-                        )}
-
-                        {finding.citationFailureReason && (
-                          <p className="text-[10px] text-red-600 font-medium">
-                            Warning: {finding.citationFailureReason}
-                          </p>
+                        ) : (
+                          <span className="text-[10px] font-semibold text-rose-700 bg-rose-50 px-1.5 py-0.5 rounded border border-rose-200 flex items-center gap-1">
+                            <AlertTriangle className="w-3 h-3 text-rose-600" />
+                            Citation Invalid / Expired
+                          </span>
                         )}
                       </div>
-                    )}
 
-                    {/* Suggested Correction */}
-                    {finding.suggestedCorrection && !isCorrected && !isDismissed && (
-                      <div className="pt-1">
-                        <div className="flex items-center justify-between text-[11px] mb-1">
-                          <span className="font-semibold text-slate-700 flex items-center gap-1">
-                            <Sparkles className="w-3 h-3 text-indigo-600" />
-                            <span>Supported Correction:</span>
-                          </span>
-                          {!finding.suggestedCorrectionSupported && (
-                            <span className="text-[9px] text-amber-600 font-medium">Neutralize phrasing</span>
+                      {finding.quotedExcerpt && (
+                        <p className="text-slate-600 text-[11px] italic">
+                          &ldquo;{finding.quotedExcerpt}&rdquo;
+                        </p>
+                      )}
+
+                      {!finding.citationValid && finding.citationFailureReason && (
+                        <div className="text-[10px] text-rose-700 font-medium pt-0.5">
+                          Warning: {finding.citationFailureReason}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Suggested Correction & Action Controls */}
+                    {!isResolved && !isDismissed && (
+                      <div className="pt-2 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                        {finding.suggestedCorrection ? (
+                          <div className="text-xs">
+                            <span className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider block">
+                              Approved Alternative:
+                            </span>
+                            <span className="text-xs font-semibold text-emerald-700">
+                              {finding.suggestedCorrection}
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="text-xs text-slate-400 italic">No automated correction available.</span>
+                        )}
+
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          {finding.suggestedCorrection && (
+                            <button
+                              onClick={() => handleApplyCorrection(finding)}
+                              className="flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-md shadow-2xs transition-colors"
+                            >
+                              <Check className="w-3 h-3" />
+                              <span>Apply to Draft</span>
+                            </button>
                           )}
-                        </div>
-                        <div className="p-2 rounded-lg bg-indigo-50/50 border border-indigo-200 text-indigo-900 font-mono text-[11px] mb-2">
-                          &ldquo;{finding.suggestedCorrection}&rdquo;
-                        </div>
-
-                        <div className="flex items-center justify-between gap-2">
-                          <button
-                            onClick={() => handleApplyCorrection(finding)}
-                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-[11px] font-semibold transition-colors shadow-xs"
-                          >
-                            <Check className="w-3 h-3" />
-                            <span>Apply to Draft</span>
-                          </button>
-
                           <button
                             onClick={() => {
                               setDismissingFindingId(finding.id);
                               setDismissReason("");
                             }}
-                            className="text-[11px] text-slate-500 hover:text-slate-800 font-medium px-2 py-1"
+                            className="px-2 py-1 text-xs text-slate-500 hover:text-slate-800 hover:bg-slate-50 rounded"
                           >
-                            Dismiss with reason
+                            Dismiss
                           </button>
                         </div>
                       </div>
                     )}
 
-                    {/* Show dismissal rationale if dismissed */}
                     {isDismissed && finding.dismissReason && (
-                      <div className="text-[10px] text-slate-500 bg-slate-100 p-2 rounded-md">
+                      <div className="text-[11px] text-slate-500 bg-slate-100 p-2 rounded">
                         <strong>Dismissal Reason:</strong> {finding.dismissReason}
                       </div>
                     )}
@@ -680,13 +673,13 @@ export const CorrectionStudioView: React.FC<CorrectionStudioProps> = ({
       </div>
 
       {/* Bottom Human Review & Approval Action Bar */}
-      <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs flex flex-wrap items-center justify-between gap-4">
+      <div className="saas-card p-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
+            <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
               Governance Gate & Approval Sign-off
-            </h3>
-            <span className="text-xs text-slate-400">•</span>
+            </h4>
+            <span className="text-xs text-slate-300">•</span>
             <span className="text-xs text-slate-600">
               Active User: <strong className="text-slate-900">{currentUser.name}</strong> ({currentUser.role})
             </span>
@@ -695,7 +688,7 @@ export const CorrectionStudioView: React.FC<CorrectionStudioProps> = ({
           {/* RBAC Notice */}
           {currentUser.role === "AGENCY_CREATOR" || currentUser.role === "EXTERNAL_CREATOR" ? (
             <p className="text-[11px] text-amber-600 font-medium mt-0.5">
-              Policy Rule: Creators cannot approve their own content. Hand off to an authorized Brand Admin/Reviewer.
+              Policy Rule: Creators cannot approve their own content. Switch role to Brand Admin (Sarah Chen) to approve.
             </p>
           ) : currentUser.role === "AUDITOR" ? (
             <p className="text-[11px] text-slate-500 font-medium mt-0.5">
@@ -709,46 +702,42 @@ export const CorrectionStudioView: React.FC<CorrectionStudioProps> = ({
         </div>
 
         {/* Action Buttons */}
-        <div className="flex items-center gap-2.5">
-          {/* Creator Brief Generation Button (available if approved) */}
+        <div className="flex items-center gap-2 flex-wrap">
           {activeVersion.status === "APPROVED" && (
             <button
               onClick={onOpenBriefsTab}
-              className="flex items-center gap-1.5 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white text-xs font-semibold rounded-xl shadow-xs transition-colors"
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white text-xs font-semibold rounded-lg shadow-2xs transition-colors"
             >
               <FileCheck className="w-3.5 h-3.5" />
               <span>Generate Creator Brief</span>
             </button>
           )}
 
-          {/* Request Changes */}
           <button
             onClick={() => handleReviewDecision("CHANGES_REQUESTED", "Revisions requested via Correction Studio.")}
             disabled={currentUser.role !== "BRAND_ADMIN"}
-            className="px-3.5 py-2 bg-amber-50 hover:bg-amber-100 text-amber-800 text-xs font-semibold rounded-xl border border-amber-200 transition-colors disabled:opacity-40"
+            className="px-3 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-800 text-xs font-semibold rounded-lg border border-amber-200 transition-colors disabled:opacity-40"
           >
             Request Changes
           </button>
 
-          {/* Override Findings (Brand Admin only) */}
           <button
             onClick={() => setShowOverrideModal(true)}
             disabled={currentUser.role !== "BRAND_ADMIN"}
-            className="px-3.5 py-2 bg-purple-50 hover:bg-purple-100 text-purple-800 text-xs font-semibold rounded-xl border border-purple-200 transition-colors disabled:opacity-40"
+            className="px-3 py-1.5 bg-purple-50 hover:bg-purple-100 text-purple-800 text-xs font-semibold rounded-lg border border-purple-200 transition-colors disabled:opacity-40"
           >
-            Override Findings & Approve
+            Override Findings
           </button>
 
-          {/* Approve Content */}
           <button
             onClick={() => handleReviewDecision("APPROVED", "Verified against approved brand knowledge items.")}
             disabled={
               currentUser.role !== "BRAND_ADMIN" ||
               findings.some((f: any) => f.severity === "HIGH" && f.resolutionStatus === "OPEN")
             }
-            className="flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-xl shadow-xs transition-colors disabled:opacity-40"
+            className="flex items-center gap-1.5 px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-lg shadow-2xs transition-colors disabled:opacity-40"
           >
-            <Check className="w-4 h-4" />
+            <Check className="w-3.5 h-3.5" />
             <span>Approve for Publication</span>
           </button>
         </div>
@@ -756,21 +745,21 @@ export const CorrectionStudioView: React.FC<CorrectionStudioProps> = ({
 
       {/* Dismiss Finding Reason Modal */}
       {dismissingFindingId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full border border-slate-200 p-6 space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs">
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full border border-slate-200 p-5 space-y-3 text-xs">
+            <div className="flex items-center justify-between pb-2 border-b border-slate-100">
               <h3 className="text-sm font-bold text-slate-900">Dismiss Compliance Finding</h3>
               <button onClick={() => setDismissingFindingId(null)} className="text-slate-400 hover:text-slate-600">
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            <p className="text-xs text-slate-600 leading-relaxed">
+            <p className="text-slate-600 leading-relaxed">
               Every finding dismissal must be accompanied by a recorded business reason and is committed to the immutable audit log.
             </p>
 
             <div>
-              <label className="block text-xs font-medium text-slate-700 mb-1">
+              <label className="block font-semibold text-slate-700 mb-1">
                 Justification / Resolution Reason:
               </label>
               <textarea
@@ -779,7 +768,7 @@ export const CorrectionStudioView: React.FC<CorrectionStudioProps> = ({
                 value={dismissReason}
                 onChange={(e) => setDismissReason(e.target.value)}
                 placeholder="e.g. Legal exception granted for retail packaging; or wording adjusted in preceding sentence."
-                className="w-full p-2.5 text-xs border border-slate-300 rounded-lg focus:outline-indigo-500"
+                className="w-full p-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500"
               />
             </div>
 
@@ -787,7 +776,7 @@ export const CorrectionStudioView: React.FC<CorrectionStudioProps> = ({
               <button
                 type="button"
                 onClick={() => setDismissingFindingId(null)}
-                className="px-3.5 py-1.5 rounded-lg text-xs text-slate-600 hover:bg-slate-100"
+                className="px-3 py-1.5 text-slate-600 hover:bg-slate-50 border border-slate-200 rounded-lg font-medium"
               >
                 Cancel
               </button>
@@ -795,7 +784,7 @@ export const CorrectionStudioView: React.FC<CorrectionStudioProps> = ({
                 type="button"
                 onClick={handleDismissFinding}
                 disabled={!dismissReason.trim()}
-                className="px-4 py-1.5 rounded-lg text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50"
+                className="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg shadow-2xs disabled:opacity-50"
               >
                 Confirm Dismissal
               </button>
@@ -806,21 +795,21 @@ export const CorrectionStudioView: React.FC<CorrectionStudioProps> = ({
 
       {/* Override Findings Modal */}
       {showOverrideModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full border border-slate-200 p-6 space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs">
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full border border-slate-200 p-5 space-y-3 text-xs">
+            <div className="flex items-center justify-between pb-2 border-b border-slate-100">
               <h3 className="text-sm font-bold text-slate-900">Brand Reviewer Policy Override</h3>
               <button onClick={() => setShowOverrideModal(false)} className="text-slate-400 hover:text-slate-600">
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            <p className="text-xs text-slate-600 leading-relaxed">
+            <p className="text-slate-600 leading-relaxed">
               As an authorized Brand Admin/Reviewer, you may override flagged findings. You must document an explicit written rationale for why this content is approved despite open findings.
             </p>
 
             <div>
-              <label className="block text-xs font-medium text-slate-700 mb-1">
+              <label className="block font-semibold text-slate-700 mb-1">
                 Executive Override Rationale (Required):
               </label>
               <textarea
@@ -828,8 +817,8 @@ export const CorrectionStudioView: React.FC<CorrectionStudioProps> = ({
                 rows={4}
                 value={overrideNotes}
                 onChange={(e) => setOverrideNotes(e.target.value)}
-                placeholder="e.g. Marketing board approved limited-run co-promotional campaign with retailer exception; claims substantiated by separate lab memo 2026-B."
-                className="w-full p-2.5 text-xs border border-slate-300 rounded-lg focus:outline-indigo-500"
+                placeholder="e.g. Marketing board approved limited-run co-promotional campaign with retailer exception; claims substantiated by separate lab memo."
+                className="w-full p-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500"
               />
             </div>
 
@@ -837,7 +826,7 @@ export const CorrectionStudioView: React.FC<CorrectionStudioProps> = ({
               <button
                 type="button"
                 onClick={() => setShowOverrideModal(false)}
-                className="px-3.5 py-1.5 rounded-lg text-xs text-slate-600 hover:bg-slate-100"
+                className="px-3 py-1.5 text-slate-600 hover:bg-slate-50 border border-slate-200 rounded-lg font-medium"
               >
                 Cancel
               </button>
@@ -845,7 +834,7 @@ export const CorrectionStudioView: React.FC<CorrectionStudioProps> = ({
                 type="button"
                 onClick={() => handleReviewDecision("OVERRIDE", overrideNotes)}
                 disabled={overrideNotes.trim().length < 5}
-                className="px-4 py-1.5 rounded-lg text-xs font-semibold text-white bg-purple-600 hover:bg-purple-700 disabled:opacity-50"
+                className="px-3.5 py-1.5 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-lg shadow-2xs disabled:opacity-50"
               >
                 Sign Off & Override
               </button>

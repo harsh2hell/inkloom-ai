@@ -3,17 +3,18 @@
 import React, { useEffect, useState } from "react";
 import {
   Database,
-  Filter,
   Search,
   Plus,
   ShieldCheck,
-  AlertCircle,
+  AlertTriangle,
   FileText,
   Calendar,
   User,
-  CheckCircle,
+  CheckCircle2,
   XCircle,
-  Info,
+  AlertCircle,
+  ExternalLink,
+  X,
 } from "lucide-react";
 
 export const KnowledgeView: React.FC = () => {
@@ -81,74 +82,67 @@ export const KnowledgeView: React.FC = () => {
   const getCategoryBadge = (cat: string) => {
     switch (cat) {
       case "PRODUCT_FACT":
-        return { bg: "bg-blue-50 text-blue-700 border-blue-200", label: "Product Fact" };
+        return { label: "Product Fact", color: "bg-blue-50 text-blue-700 border-blue-200" };
       case "PERMITTED_CLAIM":
-        return { bg: "bg-emerald-50 text-emerald-700 border-emerald-200", label: "Permitted Claim" };
+        return { label: "Permitted Claim", color: "bg-emerald-50 text-emerald-700 border-emerald-200" };
       case "PROHIBITED_CLAIM":
-        return { bg: "bg-red-50 text-red-700 border-red-200", label: "Prohibited Claim" };
+        return { label: "Prohibited Claim", color: "bg-rose-50 text-rose-700 border-rose-200" };
       case "MANDATORY_DISCLOSURE":
-        return { bg: "bg-purple-50 text-purple-700 border-purple-200", label: "Mandatory Disclosure" };
+        return { label: "Mandatory Disclosure", color: "bg-purple-50 text-purple-700 border-purple-200" };
       case "GUIDELINE":
-        return { bg: "bg-amber-50 text-amber-700 border-amber-200", label: "Guideline" };
-      case "TERMINOLOGY":
-        return { bg: "bg-slate-50 text-slate-700 border-slate-200", label: "Terminology" };
+        return { label: "Guideline", color: "bg-amber-50 text-amber-700 border-amber-200" };
       default:
-        return { bg: "bg-gray-50 text-gray-700 border-gray-200", label: cat };
+        return { label: cat, color: "bg-slate-50 text-slate-700 border-slate-200" };
     }
   };
 
   const filteredItems = items.filter((item) => {
     const q = search.toLowerCase();
     return (
-      item.id.toLowerCase().includes(q) ||
       item.title.toLowerCase().includes(q) ||
       item.content.toLowerCase().includes(q) ||
-      item.sourceExcerpt?.toLowerCase().includes(q)
+      item.id.toLowerCase().includes(q) ||
+      item.sourceDocument?.toLowerCase().includes(q)
     );
   });
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-150">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-200 shadow-xs">
+    <div className="space-y-5">
+      {/* Page Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-slate-200/80">
         <div>
-          <div className="flex items-center gap-2 mb-1">
-            <h1 className="text-xl font-bold text-slate-900">Brand Knowledge Centre</h1>
-            <span className="px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-indigo-50 text-indigo-700 border border-indigo-200">
-              Single Source of Truth
-            </span>
-          </div>
-          <p className="text-xs text-slate-500 max-w-2xl leading-relaxed">
-            Approved evidence repository for fictional brand <strong className="text-slate-800">Verdanta Foods</strong>. Marketing drafts are strictly checked against these verified specifications, claims, and brand disclosures.
+          <h2 className="text-xl font-bold text-slate-900 tracking-tight">Brand Knowledge Centre</h2>
+          <p className="text-xs text-slate-500 mt-0.5">
+            Single source of truth for Verdanta Foods: approved facts, permitted claims, prohibited terms, and mandatory disclosures.
           </p>
         </div>
-
         <button
           onClick={() => setShowAddModal(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-xl shadow-xs transition-colors shrink-0"
+          className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-lg shadow-2xs transition-colors shrink-0"
         >
           <Plus className="w-4 h-4" />
           <span>Add Knowledge Item</span>
         </button>
       </div>
 
-      {/* Categories & Filter Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
+      {/* Filter and Search Bar */}
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+        {/* Category Pills */}
         <div className="flex flex-wrap items-center gap-1.5 text-xs">
           {[
-            { id: "ALL", label: `All Items (${counts.total || 0})` },
-            { id: "PRODUCT_FACT", label: `Product Facts (${counts.productFacts || 0})` },
-            { id: "PERMITTED_CLAIM", label: `Permitted Claims (${counts.permittedClaims || 0})` },
-            { id: "PROHIBITED_CLAIM", label: `Prohibited Claims (${counts.prohibitedClaims || 0})` },
-            { id: "MANDATORY_DISCLOSURE", label: `Disclosures (${counts.mandatoryDisclosures || 0})` },
+            { id: "ALL", label: `All (${counts.total ?? items.length})` },
+            { id: "PRODUCT_FACT", label: `Facts (${counts.productFacts ?? 0})` },
+            { id: "PERMITTED_CLAIM", label: `Permitted (${counts.permittedClaims ?? 0})` },
+            { id: "PROHIBITED_CLAIM", label: `Prohibited (${counts.prohibitedClaims ?? 0})` },
+            { id: "MANDATORY_DISCLOSURE", label: `Disclosures (${counts.mandatoryDisclosures ?? 0})` },
           ].map((cat) => (
             <button
               key={cat.id}
               onClick={() => setSelectedCategory(cat.id)}
               className={`px-3 py-1.5 rounded-lg font-medium transition-colors ${
                 selectedCategory === cat.id
-                  ? "bg-slate-900 text-white font-semibold"
-                  : "bg-slate-100 text-slate-600 hover:bg-slate-200/70"
+                  ? "bg-slate-900 text-white shadow-2xs"
+                  : "bg-white text-slate-600 hover:bg-slate-50 border border-slate-200"
               }`}
             >
               {cat.label}
@@ -156,99 +150,89 @@ export const KnowledgeView: React.FC = () => {
           ))}
         </div>
 
-        {/* Search */}
-        <div className="relative w-full sm:w-64">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+        {/* Search Input */}
+        <div className="relative min-w-[220px]">
+          <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
           <input
             type="text"
-            placeholder="Search truth items, ID, or excerpt..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-9 pr-3 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-indigo-500 bg-slate-50 focus:bg-white"
+            placeholder="Search truth items..."
+            className="w-full pl-8 pr-3 py-1.5 text-xs bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
           />
         </div>
       </div>
 
-      {/* Knowledge Items Grid */}
+      {/* Knowledge Item Grid */}
       {loading ? (
         <div className="py-20 text-center text-xs text-slate-400">Loading Knowledge Items...</div>
       ) : filteredItems.length === 0 ? (
-        <div className="py-12 bg-white rounded-2xl border border-slate-200 text-center text-xs text-slate-500">
-          No knowledge items found matching the selected filters.
+        <div className="py-16 text-center text-xs text-slate-500 saas-card">
+          No knowledge items match the search query or filter.
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredItems.map((item) => {
             const badge = getCategoryBadge(item.category);
             const isExpired = item.expiryDate && new Date(item.expiryDate) < new Date();
-
             return (
               <div
                 key={item.id}
-                className={`bg-white rounded-2xl p-5 border shadow-xs transition-all hover:shadow-md flex flex-col justify-between ${
-                  isExpired ? "border-amber-300 bg-amber-50/20" : "border-slate-200"
+                className={`saas-card p-4 flex flex-col justify-between transition-all ${
+                  isExpired ? "border-amber-300/80 bg-amber-50/15" : "hover:border-slate-300"
                 }`}
               >
                 <div>
-                  {/* Top Meta Bar */}
+                  {/* Card Header */}
                   <div className="flex items-start justify-between gap-2 mb-2">
-                    <div className="flex items-center gap-2">
-                      <span className="font-mono text-xs font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200">
-                        {item.id}
-                      </span>
-                      <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-md border ${badge.bg}`}>
+                    <span className="font-mono text-[11px] font-semibold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">
+                      {item.id}
+                    </span>
+                    <div className="flex items-center gap-1.5 flex-wrap justify-end">
+                      <span className={`text-[10px] font-semibold px-2 py-0.5 rounded border ${badge.color}`}>
                         {badge.label}
                       </span>
-                    </div>
-
-                    <div className="flex items-center gap-1.5">
-                      {isExpired ? (
-                        <span className="text-[10px] font-bold text-amber-700 bg-amber-100 px-2 py-0.5 rounded-md border border-amber-300 flex items-center gap-1">
-                          <AlertCircle className="w-3 h-3" />
-                          <span>EXPIRED (Dec 2023)</span>
-                        </span>
-                      ) : (
-                        <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200 flex items-center gap-1">
-                          <CheckCircle className="w-3 h-3" />
-                          <span>APPROVED v{item.version}</span>
+                      {isExpired && (
+                        <span className="text-[10px] font-semibold px-2 py-0.5 rounded border bg-amber-50 text-amber-700 border-amber-300">
+                          Expired Dec 2023
                         </span>
                       )}
                     </div>
                   </div>
 
-                  {/* Title */}
-                  <h3 className="text-sm font-bold text-slate-900 mb-2 leading-snug">{item.title}</h3>
-
-                  {/* Body Content */}
-                  <p className="text-xs text-slate-600 mb-3 leading-relaxed">{item.content}</p>
-
-                  {/* Source Excerpt Card (Crucial for Citation Validation) */}
-                  <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs mb-3">
-                    <div className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1 flex items-center justify-between">
-                      <span className="flex items-center gap-1">
-                        <FileText className="w-3 h-3 text-indigo-600" />
-                        <span>Source Document Excerpt (Verbatim)</span>
-                      </span>
-                      <span className="text-slate-500 font-mono text-[9px]">{item.sourceDocument}</span>
-                    </div>
-                    <p className="font-mono text-[11px] text-slate-800 bg-white p-2 rounded-md border border-slate-100 italic leading-relaxed">
-                      &ldquo;{item.sourceExcerpt}&rdquo;
-                    </p>
-                  </div>
+                  {/* Title & Content */}
+                  <h3 className="text-xs font-bold text-slate-900 leading-snug mb-1.5">{item.title}</h3>
+                  <p className="text-xs text-slate-600 leading-relaxed mb-3">{item.content}</p>
                 </div>
 
-                {/* Footer Metadata */}
-                <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
-                  <div className="flex items-center gap-1.5">
-                    <User className="w-3 h-3 text-slate-400" />
-                    <span>{item.owner}</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <Calendar className="w-3 h-3 text-slate-400" />
+                {/* Evidence & Source Footer */}
+                <div className="pt-2.5 border-t border-slate-100 space-y-1.5 text-[11px] text-slate-500">
+                  <div className="flex items-center justify-between text-slate-400 text-[10px]">
+                    <span className="truncate max-w-[150px]">Owner: {item.owner}</span>
                     <span>
-                      {item.expiryDate ? `Expires: ${new Date(item.expiryDate).toLocaleDateString()}` : "Permanent"}
+                      {item.expiryDate
+                        ? `Expiry: ${new Date(item.expiryDate).toLocaleDateString()}`
+                        : "Permanent Specification"}
                     </span>
                   </div>
+
+                  {item.sourceDocument && (
+                    <div className="p-2 rounded bg-slate-50 border border-slate-100 text-[11px]">
+                      <div className="font-semibold text-slate-700 text-[10px] mb-0.5 flex items-center justify-between">
+                        <span>Source: {item.sourceDocument}</span>
+                        {isExpired ? (
+                          <span className="text-amber-600 font-bold text-[9px]">EXPIRED</span>
+                        ) : (
+                          <span className="text-emerald-600 font-bold text-[9px]">ACTIVE</span>
+                        )}
+                      </div>
+                      {item.sourceExcerpt && (
+                        <p className="text-slate-600 text-[10px] italic leading-tight line-clamp-2">
+                          &ldquo;{item.sourceExcerpt}&rdquo;
+                        </p>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
             );
@@ -258,74 +242,77 @@ export const KnowledgeView: React.FC = () => {
 
       {/* Add Knowledge Item Modal */}
       {showAddModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-xl w-full border border-slate-200 p-6 space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <h2 className="text-base font-bold text-slate-900">Add Brand Knowledge Item</h2>
-              <button onClick={() => setShowAddModal(false)} className="text-slate-400 hover:text-slate-600">
-                <XCircle className="w-5 h-5" />
+        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl border border-slate-200 shadow-xl max-w-lg w-full p-5 text-xs animate-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <h3 className="text-sm font-bold text-slate-900">Add Brand Knowledge Item</h3>
+              <button
+                onClick={() => setShowAddModal(false)}
+                className="text-slate-400 hover:text-slate-600"
+              >
+                <X className="w-4 h-4" />
               </button>
             </div>
 
-            <form onSubmit={handleAddItem} className="space-y-3 text-xs">
+            <form onSubmit={handleAddItem} className="mt-4 space-y-3">
               <div>
-                <label className="block font-medium text-slate-700 mb-1">Item Title</label>
+                <label className="block font-semibold text-slate-700 mb-1">Title</label>
                 <input
+                  type="text"
                   required
                   value={newTitle}
                   onChange={(e) => setNewTitle(e.target.value)}
-                  placeholder="e.g. Nutritional Specification: Dietary Fiber"
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-indigo-500"
+                  placeholder="e.g., Protein Concentration Specification"
+                  className="w-full px-3 py-1.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500"
                 />
               </div>
 
               <div>
-                <label className="block font-medium text-slate-700 mb-1">Category</label>
+                <label className="block font-semibold text-slate-700 mb-1">Category</label>
                 <select
                   value={newCategory}
                   onChange={(e) => setNewCategory(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-indigo-500 bg-white"
+                  className="w-full px-3 py-1.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500"
                 >
                   <option value="PRODUCT_FACT">Product Fact</option>
                   <option value="PERMITTED_CLAIM">Permitted Claim</option>
                   <option value="PROHIBITED_CLAIM">Prohibited Claim</option>
                   <option value="MANDATORY_DISCLOSURE">Mandatory Disclosure</option>
                   <option value="GUIDELINE">Guideline</option>
-                  <option value="TERMINOLOGY">Terminology</option>
                 </select>
               </div>
 
               <div>
-                <label className="block font-medium text-slate-700 mb-1">Policy Content / Specification</label>
+                <label className="block font-semibold text-slate-700 mb-1">Rule / Claim Content</label>
                 <textarea
                   required
                   rows={3}
                   value={newContent}
                   onChange={(e) => setNewContent(e.target.value)}
-                  placeholder="Description of the truth item, rule, or fact..."
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-indigo-500"
+                  placeholder="Exact factual statement, permitted phrase, or prohibited wording..."
+                  className="w-full px-3 py-1.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500"
                 />
               </div>
 
               <div>
-                <label className="block font-medium text-slate-700 mb-1">Source Document Name</label>
+                <label className="block font-semibold text-slate-700 mb-1">Source Document Reference</label>
                 <input
+                  type="text"
                   value={newSourceDoc}
                   onChange={(e) => setNewSourceDoc(e.target.value)}
-                  placeholder="e.g. Verdanta_Lab_Certificate_Analysis_2026.pdf"
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-indigo-500"
+                  placeholder="e.g., Certificate of Analysis 2026-QA-1092"
+                  className="w-full px-3 py-1.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500"
                 />
               </div>
 
               <div>
-                <label className="block font-medium text-slate-700 mb-1">Exact Supporting Source Excerpt</label>
+                <label className="block font-semibold text-slate-700 mb-1">Verifiable Excerpt in Source</label>
                 <textarea
-                  required
                   rows={2}
                   value={newSourceExcerpt}
                   onChange={(e) => setNewSourceExcerpt(e.target.value)}
-                  placeholder="Exact quotation from the document for strict citation matching..."
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-indigo-500 font-mono"
+                  placeholder="Exact quote from source doc used for application-side citation validation..."
+                  className="w-full px-3 py-1.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500"
                 />
               </div>
 
@@ -333,13 +320,13 @@ export const KnowledgeView: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setShowAddModal(false)}
-                  className="px-4 py-2 rounded-lg text-slate-600 hover:bg-slate-100"
+                  className="px-3 py-1.5 text-slate-600 hover:bg-slate-50 border border-slate-200 rounded-lg font-medium"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg shadow-xs"
+                  className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg shadow-2xs"
                 >
                   Save Truth Item
                 </button>
