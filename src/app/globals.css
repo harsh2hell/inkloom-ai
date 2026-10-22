@@ -1,10 +1,10 @@
 @import "tailwindcss";
 
 :root {
-  --background: #e8edf4;
+  --background: #f4f5f8;
   --foreground: #0f172a;
-  --brand-primary: #4f46e5;
-  --brand-primary-hover: #4338ca;
+  --brand-primary: #e05638;
+  --brand-primary-hover: #c94529;
   --surface-card: #ffffff;
   --surface-border: #e2e8f0;
 }
@@ -38,17 +38,17 @@ body {
   background: #94a3b8;
 }
 
-/* Neo-modern Soft SaaS Clay Cards */
+/* Modern Rounded Cards (matching reference) */
 .clay-card {
   background: #ffffff;
-  border: 1px solid rgba(226, 232, 240, 0.8);
+  border: 1px solid rgba(226, 232, 240, 0.7);
   border-radius: 1.75rem; /* 28px */
   box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.03), 0 2px 6px -1px rgba(15, 23, 42, 0.02);
 }
 
 .clay-card-interactive {
   background: #ffffff;
-  border: 1px solid rgba(226, 232, 240, 0.85);
+  border: 1px solid rgba(226, 232, 240, 0.8);
   border-radius: 1.75rem;
   box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.03), 0 2px 6px -1px rgba(15, 23, 42, 0.02);
   transition: all 180ms cubic-bezier(0.4, 0, 0.2, 1);
@@ -62,14 +62,14 @@ body {
 /* Legacy saas-card support */
 .saas-card {
   background: #ffffff;
-  border: 1px solid rgba(226, 232, 240, 0.85);
+  border: 1px solid rgba(226, 232, 240, 0.8);
   border-radius: 1.5rem;
   box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.03);
 }
 
 .saas-card-interactive {
   background: #ffffff;
-  border: 1px solid rgba(226, 232, 240, 0.85);
+  border: 1px solid rgba(226, 232, 240, 0.8);
   border-radius: 1.5rem;
   box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.03);
   transition: all 150ms cubic-bezier(0.4, 0, 0.2, 1);
@@ -79,65 +79,36 @@ body {
   box-shadow: 0 8px 24px -4px rgba(15, 23, 42, 0.06);
 }
 
-/* Glowing Floating Pills (matching reference image) */
-.pill-glow-purple {
-  background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%);
+/* Warm Coral Terracotta Accents */
+.btn-coral {
+  background-color: #e05638;
   color: #ffffff;
-  box-shadow: 0 6px 18px rgba(124, 58, 237, 0.35);
-  border-radius: 1rem;
+  box-shadow: 0 6px 18px rgba(224, 86, 56, 0.3);
+  transition: all 150ms ease-in-out;
+}
+.btn-coral:hover {
+  background-color: #c94529;
+  box-shadow: 0 8px 22px rgba(224, 86, 56, 0.4);
 }
 
-.pill-glow-emerald {
-  background: linear-gradient(135deg, #10b981 0%, #14b8a6 100%);
-  color: #ffffff;
-  box-shadow: 0 6px 18px rgba(16, 185, 129, 0.35);
-  border-radius: 1rem;
+/* Concentric Layer Circle Funnel Styling */
+.concentric-circle-outer {
+  background: radial-gradient(circle, #fff1ed 0%, #ffedd5 100%);
+}
+.concentric-circle-mid {
+  background: radial-gradient(circle, #ffdecb 0%, #fed7aa 100%);
+}
+.concentric-circle-inner {
+  background: radial-gradient(circle, #fca584 0%, #fb923c 100%);
+}
+.concentric-circle-center {
+  background: #e05638;
+  box-shadow: 0 6px 20px rgba(224, 86, 56, 0.4);
 }
 
-.pill-frosted-sky {
-  background: rgba(224, 242, 254, 0.65);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border: 1px solid rgba(186, 230, 253, 0.9);
-  color: #0369a1;
-  box-shadow: 0 4px 16px rgba(3, 105, 161, 0.12);
-  border-radius: 1rem;
-}
-
-/* Hatched Diagonal Pattern for calendar/timeline slots */
-.pattern-hatch-subtle {
-  background-image: repeating-linear-gradient(
-    45deg,
-    rgba(203, 213, 225, 0.35) 0,
-    rgba(203, 213, 225, 0.35) 1.5px,
-    transparent 1.5px,
-    transparent 6px
-  );
-}
-
-/* 3D Glass / Soft Sphere Orb */
-.sphere-3d-orb {
-  width: 68px;
-  height: 68px;
-  border-radius: 50%;
-  background: radial-gradient(circle at 35% 30%, #bfdbfe 0%, #60a5fa 45%, #2563eb 85%, #1d4ed8 100%);
-  box-shadow:
-    inset -4px -4px 10px rgba(15, 23, 42, 0.35),
-    inset 4px 4px 8px rgba(255, 255, 255, 0.8),
-    0 10px 24px -2px rgba(37, 99, 235, 0.35);
-  position: relative;
-}
-
-.sphere-3d-orb::after {
-  content: "";
-  position: absolute;
-  top: 12%;
-  left: 22%;
-  width: 28%;
-  height: 20%;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0) 80%);
-  transform: rotate(-30deg);
+/* Circular Gauge Ring */
+.circular-progress-ring {
+  background: conic-gradient(#e05638 0% 94%, #1e293b 94% 100%);
 }
 
 /* Diff highlights for Correction Studio */

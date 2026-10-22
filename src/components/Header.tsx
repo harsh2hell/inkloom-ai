@@ -10,10 +10,8 @@ import {
   FileCheck2,
   History,
   Shield,
-  BookOpen,
   SlidersHorizontal,
-  FileText,
-  Compass,
+  ChevronDown,
 } from "lucide-react";
 import { UserProfile } from "./Navbar";
 
@@ -37,13 +35,7 @@ export const Header: React.FC<HeaderProps> = ({
   onSelectTab,
 }) => {
   const [searchQuery, setSearchQuery] = useState("");
-  const [showSearchInput, setShowSearchInput] = useState(false);
-
-  const pillTabs = [
-    { id: "overview", label: "Dashboard", icon: LayoutDashboard },
-    { id: "content", label: "Reviews", icon: FileCheck2 },
-    { id: "audit", label: "Audit Logs", icon: History },
-  ];
+  const [showPersonaMenu, setShowPersonaMenu] = useState(false);
 
   const getInitials = (name: string) => {
     return name
@@ -70,151 +62,133 @@ export const Header: React.FC<HeaderProps> = ({
   };
 
   return (
-    <header className="w-full flex flex-col md:flex-row items-center justify-between gap-4 py-1 px-1">
-      {/* Left: Mobile Menu Button + Neo-Modern Pill Navigation Bar */}
-      <div className="flex items-center gap-2.5 w-full md:w-auto">
+    <header className="w-full flex items-center justify-between gap-4 py-2 px-1 relative">
+      {/* Top Left: Menu Button + Black Monogram Logo + Dashboard Title (matching reference) */}
+      <div className="flex items-center gap-3">
+        {/* Menu Pill Button */}
         <button
           onClick={onOpenSidebar}
-          className="lg:hidden p-2 rounded-2xl bg-white border border-slate-200/80 text-slate-600 hover:text-slate-900 shadow-xs"
-          aria-label="Open dock menu"
+          className="w-10 h-10 rounded-full bg-white border border-slate-200/90 shadow-2xs flex items-center justify-center text-slate-700 hover:text-slate-950 hover:bg-slate-50 transition-colors cursor-pointer"
+          aria-label="Toggle navigation menu"
         >
-          <Menu className="w-5 h-5" />
+          <Menu className="w-4 h-4" />
         </button>
 
-        {/* Pill Navigation Bar (matching reference top bar) */}
-        <div className="flex items-center bg-white/90 backdrop-blur-md rounded-full p-1.5 border border-slate-200/80 shadow-[0_2px_12px_rgba(15,23,42,0.03)] gap-1 overflow-x-auto max-w-full">
-          {pillTabs.map((tab) => {
-            const Icon = tab.icon;
-            const isActive = activeTab === tab.id;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => onSelectTab && onSelectTab(tab.id)}
-                className={`flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all duration-150 whitespace-nowrap ${
-                  isActive
-                    ? "bg-slate-100 text-slate-900 shadow-xs"
-                    : "text-slate-500 hover:text-slate-800 hover:bg-slate-50"
-                }`}
-              >
-                <Icon className={`w-3.5 h-3.5 ${isActive ? "text-indigo-600" : "text-slate-400"}`} />
-                <span>{tab.label}</span>
-              </button>
-            );
-          })}
+        {/* Black Circular Monogram Badge */}
+        <div
+          onClick={() => onSelectTab && onSelectTab("overview")}
+          className="w-10 h-10 rounded-full bg-slate-950 text-white flex items-center justify-center font-bold text-xs tracking-tight shadow-xs cursor-pointer hover:scale-105 transition-transform"
+          title="Inkloom AI"
+        >
+          <span>IL</span>
+        </div>
 
-          {/* Search Pill Button */}
-          {showSearchInput ? (
-            <div className="flex items-center px-2 py-0.5 bg-slate-50 rounded-full border border-slate-200 ml-1">
-              <Search className="w-3.5 h-3.5 text-slate-400 mr-1.5" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search claims & reviews..."
-                className="text-xs bg-transparent outline-none w-36 text-slate-800 placeholder-slate-400 py-0.5"
-                autoFocus
-                onBlur={() => !searchQuery && setShowSearchInput(false)}
-              />
-            </div>
-          ) : (
-            <button
-              onClick={() => setShowSearchInput(true)}
-              className="p-1.5 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-50 transition-colors ml-1"
-              aria-label="Search"
-              title="Search claims & reviews"
-            >
-              <Search className="w-4 h-4" />
-            </button>
-          )}
+        {/* Two-line Title: Governance / Dashboard */}
+        <div
+          onClick={() => onSelectTab && onSelectTab("overview")}
+          className="cursor-pointer select-none"
+        >
+          <div className="text-xs font-bold text-slate-900 leading-tight">Governance</div>
+          <div className="text-[11px] font-medium text-slate-400 leading-none">Dashboard</div>
         </div>
       </div>
 
-      {/* Right: Team Avatars Stack + Submit Content CTA + Active Profile Pill */}
-      <div className="flex items-center gap-3 w-full md:w-auto justify-end">
-        {/* Real Team Persona Avatars Stack (interactive role switch) */}
-        <div className="hidden sm:flex items-center bg-white/90 backdrop-blur-md px-2 py-1 rounded-full border border-slate-200/80 shadow-[0_2px_12px_rgba(15,23,42,0.03)] gap-1">
-          <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider px-1.5">
-            Team:
-          </span>
-          <div className="flex -space-x-2 items-center">
-            {availableUsers.map((user) => {
-              const isSelected = user.id === currentUser.id;
-              return (
-                <button
-                  key={user.id}
-                  onClick={() => onSelectUser(user)}
-                  className={`relative group rounded-full transition-transform hover:scale-110 hover:z-20 ${
-                    isSelected ? "ring-2 ring-indigo-600 z-10" : ""
-                  }`}
-                  title={`${user.name} (${getRoleShort(user.role)}) — Click to switch persona`}
-                >
-                  {user.avatarUrl ? (
-                    <img
-                      src={user.avatarUrl}
-                      alt={user.name}
-                      className="w-7 h-7 rounded-full object-cover border-2 border-white"
-                    />
-                  ) : (
-                    <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-slate-200 to-indigo-100 text-indigo-700 font-bold text-[10px] flex items-center justify-center border-2 border-white">
-                      {getInitials(user.name)}
-                    </div>
-                  )}
-
-                  {/* Tooltip */}
-                  <div className="absolute bottom-full mb-1.5 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-[10px] py-1 px-2 rounded-lg whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity shadow-md z-30">
-                    <div className="font-semibold">{user.name}</div>
-                    <div className="text-slate-300 text-[9px]">{getRoleShort(user.role)}</div>
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Action Button: + Submit Content (smooth pill) */}
+      {/* Top Right: Plus Button + Persona Badge + Search Bar (matching reference) */}
+      <div className="flex items-center gap-3">
+        {/* Circular Plus Button */}
         <button
           onClick={onOpenSubmitModal}
-          className="flex items-center gap-1.5 bg-white hover:bg-slate-50 text-slate-800 border border-slate-200/90 hover:border-slate-300 px-4 py-2 rounded-full text-xs font-semibold shadow-[0_2px_8px_rgba(0,0,0,0.03)] transition-all hover:shadow-xs active:scale-95 shrink-0"
+          className="w-9 h-9 rounded-full bg-white hover:bg-slate-50 border border-slate-200/80 shadow-2xs flex items-center justify-center text-slate-700 hover:text-slate-900 transition-colors"
+          title="Submit New Content"
+          aria-label="Submit New Content"
         >
-          <Plus className="w-4 h-4 text-indigo-600" />
-          <span>Add Content</span>
+          <Plus className="w-4 h-4 text-slate-600" />
         </button>
 
-        {/* Active User Avatar & Bell Pill */}
-        <div className="flex items-center gap-2 bg-white/90 backdrop-blur-md p-1 pl-1.5 pr-2 rounded-full border border-slate-200/80 shadow-[0_2px_12px_rgba(15,23,42,0.03)]">
-          <div className="relative">
+        {/* Persona Profile Card (avatar + name + role + switcher dropdown) */}
+        <div className="relative">
+          <button
+            onClick={() => setShowPersonaMenu(!showPersonaMenu)}
+            className="flex items-center gap-2.5 bg-white hover:bg-slate-50 border border-slate-200/80 px-2 py-1 rounded-full shadow-2xs transition-colors cursor-pointer"
+            title="Click to switch active testing persona"
+          >
             {currentUser.avatarUrl ? (
               <img
                 src={currentUser.avatarUrl}
                 alt={currentUser.name}
-                className="w-8 h-8 rounded-full object-cover border border-slate-200"
+                className="w-7 h-7 rounded-full object-cover border border-slate-200"
               />
             ) : (
-              <div className="w-8 h-8 rounded-full bg-indigo-100 text-indigo-700 font-bold text-xs flex items-center justify-center border border-indigo-200">
+              <div className="w-7 h-7 rounded-full bg-[#e05638] text-white font-bold text-[10px] flex items-center justify-center">
                 {getInitials(currentUser.name)}
               </div>
             )}
-            <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-white" />
-          </div>
 
-          <div className="hidden lg:block text-left mr-1">
-            <div className="text-xs font-bold text-slate-900 leading-tight truncate max-w-[110px]">
-              {currentUser.name}
+            <div className="text-left hidden sm:block pr-1">
+              <div className="text-xs font-bold text-slate-900 leading-tight">
+                {currentUser.name}
+              </div>
+              <div className="text-[10px] text-slate-400 font-medium leading-none">
+                {getRoleShort(currentUser.role)}
+              </div>
             </div>
-            <div className="text-[10px] text-slate-400 font-medium leading-none">
-              {getRoleShort(currentUser.role)}
-            </div>
-          </div>
 
-          {/* Bell Notification Button */}
-          <button
-            className="w-8 h-8 rounded-full bg-slate-50 hover:bg-slate-100 text-slate-500 hover:text-slate-800 flex items-center justify-center transition-colors relative"
-            title="Notifications"
-            aria-label="View notifications"
-          >
-            <Bell className="w-4 h-4" />
-            <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-indigo-600" />
+            <ChevronDown className="w-3 h-3 text-slate-400 hidden sm:block" />
           </button>
+
+          {/* Persona Switcher Dropdown */}
+          {showPersonaMenu && (
+            <div className="absolute right-0 top-full mt-2 w-56 bg-white rounded-2xl border border-slate-200 shadow-xl p-2 z-50 animate-in fade-in zoom-in-95 duration-100">
+              <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-2 py-1 border-b border-slate-100 mb-1">
+                Switch Demo Persona
+              </div>
+              {availableUsers.map((user) => {
+                const isSelected = user.id === currentUser.id;
+                return (
+                  <button
+                    key={user.id}
+                    onClick={() => {
+                      onSelectUser(user);
+                      setShowPersonaMenu(false);
+                    }}
+                    className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-xl text-left text-xs transition-colors ${
+                      isSelected
+                        ? "bg-slate-100 font-bold text-slate-900"
+                        : "hover:bg-slate-50 text-slate-600"
+                    }`}
+                  >
+                    {user.avatarUrl ? (
+                      <img
+                        src={user.avatarUrl}
+                        alt={user.name}
+                        className="w-6 h-6 rounded-full object-cover shrink-0"
+                      />
+                    ) : (
+                      <div className="w-6 h-6 rounded-full bg-slate-200 text-slate-700 font-bold text-[9px] flex items-center justify-center shrink-0">
+                        {getInitials(user.name)}
+                      </div>
+                    )}
+                    <div className="min-w-0 flex-1 truncate">
+                      <div className="truncate text-slate-900 text-[11px] font-semibold">{user.name}</div>
+                      <div className="text-[9px] text-slate-400">{getRoleShort(user.role)}</div>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Search Pill Input (matching reference) */}
+        <div className="hidden md:flex items-center bg-white border border-slate-200/80 rounded-full px-3.5 py-1.5 shadow-2xs w-56 focus-within:w-64 transition-all">
+          <Search className="w-3.5 h-3.5 text-slate-400 mr-2 shrink-0" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Start searching here ..."
+            className="w-full text-xs bg-transparent outline-none text-slate-800 placeholder-slate-400"
+          />
         </div>
       </div>
     </header>
