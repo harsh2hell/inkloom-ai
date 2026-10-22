@@ -201,27 +201,6 @@ export const OverviewView: React.FC<OverviewProps> = ({
 
       {/* 2. Middle Cards Section (matching reference VISA / Totals / Gauge / Latency layout) */}
       <div className="flex flex-col xl:flex-row items-stretch gap-4">
-        {/* Far-left Compact Capsule Dock */}
-        <div className="hidden xl:flex w-12 py-4 rounded-full bg-white border border-slate-200/80 shadow-2xs flex-col items-center justify-between shrink-0">
-          <button
-            onClick={onOpenSubmitModal}
-            className="w-8 h-8 rounded-full bg-slate-50 hover:bg-slate-100 flex items-center justify-center text-slate-600 transition-colors"
-            title="Submit Content"
-            aria-label="Submit Content"
-          >
-            <Plus className="w-4 h-4" />
-          </button>
-
-          <button
-            onClick={() => onOpenTab("audit")}
-            className="w-8 h-8 rounded-full bg-slate-50 hover:bg-slate-100 flex items-center justify-center text-slate-600 transition-colors"
-            title="Audit Trail"
-            aria-label="Audit Trail"
-          >
-            <Share2 className="w-3.5 h-3.5" />
-          </button>
-        </div>
-
         {/* Card 1: Brand & Campaign Truth Vault (VISA card equivalent in reference) */}
         <div className="clay-card p-6 flex-1 flex flex-col justify-between min-w-[280px]">
           <div>

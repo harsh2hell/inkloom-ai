@@ -99,9 +99,9 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-[#e8edf4] p-2.5 sm:p-4 lg:p-6 flex flex-col items-center justify-start text-slate-900 selection:bg-indigo-100 selection:text-indigo-900">
-      {/* Master Neo-Modern Canvas Frame (matching the rounded container in the reference design) */}
-      <div className="w-full max-w-[1640px] min-h-[92vh] bg-[#f4f7fb] rounded-[32px] sm:rounded-[36px] shadow-[0_16px_50px_rgba(15,23,42,0.06)] border border-white/80 p-3 sm:p-5 flex flex-col lg:flex-row gap-5 relative">
+    <div className="min-h-screen bg-[#f3f4f7] p-2.5 sm:p-4 lg:p-6 flex flex-col items-center justify-start text-slate-900 selection:bg-orange-100 selection:text-orange-950 font-sans">
+      {/* Master Neo-Modern Canvas Frame (matching floating soft-edge card aesthetic) */}
+      <div className="w-full max-w-[1680px] min-h-[94vh] bg-[#f8f9fb] rounded-[32px] sm:rounded-[40px] shadow-[0_20px_60px_rgba(15,23,42,0.05)] border border-white p-3 sm:p-5 flex flex-col lg:flex-row gap-5 relative">
         {/* 1. Left Vertical Icon Dock Rail */}
         <Sidebar
           activeTab={activeTab}
@@ -179,18 +179,6 @@ export default function Home() {
               />
             )}
           </main>
-
-          {/* Minimal Subtle Brand Tagline */}
-          <footer className="pt-2 pb-1 px-3 text-[11px] text-slate-400 flex flex-col sm:flex-row items-center justify-between gap-1 border-t border-slate-200/50">
-            <div className="flex items-center gap-1.5 font-medium">
-              <span className="text-slate-600 font-semibold">Inkloom AI</span>
-              <span>•</span>
-              <span>Content Governance & Claims Verification</span>
-            </div>
-            <div className="text-[10px] text-slate-400">
-              Verdanta Foods Demo &bull; CodeAxis Round 2
-            </div>
-          </footer>
         </div>
       </div>
 
