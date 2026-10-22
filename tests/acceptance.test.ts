@@ -359,6 +359,11 @@ describe("Inkloom AI — 14 Critical Acceptance Tests", () => {
       },
     });
 
+    await prisma.contentItem.update({
+      where: { id: testContent.id },
+      data: { currentVersionNumber: 2 },
+    });
+
     // Verify Version 1 and its prior analysis run are preserved intact
     const originalV1 = await prisma.contentVersion.findUnique({
       where: { id: v1.id },

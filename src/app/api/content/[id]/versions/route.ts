@@ -26,7 +26,6 @@ export async function POST(
       return NextResponse.json({ error: "Content item not found." }, { status: 404 });
     }
 
-    const nextVersionNumber = contentItem.currentVersionNumber + 1;
     const submitter = await prisma.user.findUnique({
       where: { id: submitterId || "usr_agency_01" },
     });
@@ -35,6 +34,18 @@ export async function POST(
 
     // 1. Create new version and update content pointer atomically
     const newVersion = await prisma.$transaction(async (tx) => {
+      // Find the absolute highest existing version number for this content item
+      const highestVersion = await tx.contentVersion.aggregate({
+        where: { contentItemId: contentItem.id },
+        _max: { versionNumber: true },
+      });
+
+      const maxExisting = Math.max(
+        contentItem.currentVersionNumber || 1,
+        highestVersion._max.versionNumber || 1
+      );
+      const nextVersionNumber = maxExisting + 1;
+
       const ver = await tx.contentVersion.create({
         data: {
           contentItemId: contentItem.id,
