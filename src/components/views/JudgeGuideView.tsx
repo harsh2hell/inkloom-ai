@@ -77,8 +77,8 @@ export const JudgeGuideView: React.FC<JudgeGuideProps> = ({
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-slate-200/80">
         <div>
           <div className="flex items-center gap-2">
-            <h2 className="text-2xl font-bold text-slate-900 tracking-tight">CodeAxis Round 2 — Judge Demo Guide</h2>
-            <span className="text-[10px] font-semibold text-indigo-700 bg-indigo-50 px-2.5 py-0.5 rounded-full border border-indigo-200">
+            <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight">CodeAxis Round 2 — Judge Demo Guide</h2>
+            <span className="text-[10px] font-bold text-[#e05638] bg-orange-50 px-3 py-1 rounded-full border border-orange-200">
               Interactive Script
             </span>
           </div>
@@ -94,7 +94,7 @@ export const JudgeGuideView: React.FC<JudgeGuideProps> = ({
           <div key={step.num} className="clay-card p-6 space-y-3">
             <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
               <div className="flex items-start gap-3.5">
-                <span className="w-7 h-7 rounded-full bg-indigo-600 text-white font-bold flex items-center justify-center text-xs shrink-0 mt-0.5 shadow-xs">
+                <span className="w-8 h-8 rounded-2xl bg-gradient-to-br from-slate-950 to-slate-900 text-white font-extrabold flex items-center justify-center text-xs shrink-0 mt-0.5 shadow-sm">
                   {step.num}
                 </span>
                 <div>
@@ -105,7 +105,7 @@ export const JudgeGuideView: React.FC<JudgeGuideProps> = ({
 
               <button
                 onClick={step.action}
-                className="flex items-center gap-1.5 px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold rounded-full shadow-xs transition-colors shrink-0 self-start sm:self-auto"
+                className="flex items-center gap-1.5 px-4 py-2 bg-slate-950 hover:bg-slate-900 text-white text-xs font-bold rounded-full shadow-xs transition-all hover:scale-105 active:scale-95 shrink-0 self-start sm:self-auto cursor-pointer"
               >
                 <span>{step.actionLabel}</span>
                 <ArrowRight className="w-3.5 h-3.5" />
