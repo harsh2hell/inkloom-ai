@@ -3,24 +3,13 @@ import { PrismaClient, Role, KnowledgeCategory, ApprovalStatus, ContentType, Con
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log("Seeding Inkloom AI database...");
+  console.log("Seeding Inkloom AI database (idempotent, non-destructive)...");
 
-  // 1. Clear existing demo data
-  await prisma.auditLog.deleteMany();
-  await prisma.creatorSubmission.deleteMany();
-  await prisma.creatorBrief.deleteMany();
-  await prisma.humanReview.deleteMany();
-  await prisma.finding.deleteMany();
-  await prisma.analysisRun.deleteMany();
-  await prisma.contentVersion.deleteMany();
-  await prisma.contentItem.deleteMany();
-  await prisma.knowledgeItem.deleteMany();
-  await prisma.user.deleteMany();
-  await prisma.brand.deleteMany();
-
-  // 2. Seed Users representing the 4 Core Roles
-  const adminUser = await prisma.user.create({
-    data: {
+  // 1. Seed / Upsert Users representing the 4 Core Roles
+  const adminUser = await prisma.user.upsert({
+    where: { id: "usr_admin_01" },
+    update: {},
+    create: {
       id: "usr_admin_01",
       name: "Sarah Chen",
       email: "sarah.chen@verdantafoods.demo",
@@ -30,8 +19,10 @@ async function main() {
     },
   });
 
-  const agencyUser = await prisma.user.create({
-    data: {
+  const agencyUser = await prisma.user.upsert({
+    where: { id: "usr_agency_01" },
+    update: {},
+    create: {
       id: "usr_agency_01",
       name: "Alex Rivera",
       email: "alex.rivera@apexmarketing.demo",
@@ -41,8 +32,10 @@ async function main() {
     },
   });
 
-  const creatorUser = await prisma.user.create({
-    data: {
+  const creatorUser = await prisma.user.upsert({
+    where: { id: "usr_creator_01" },
+    update: {},
+    create: {
       id: "usr_creator_01",
       name: "Maya Patel",
       email: "maya.creates@contentlab.demo",
@@ -52,8 +45,10 @@ async function main() {
     },
   });
 
-  const auditorUser = await prisma.user.create({
-    data: {
+  const auditorUser = await prisma.user.upsert({
+    where: { id: "usr_auditor_01" },
+    update: {},
+    create: {
       id: "usr_auditor_01",
       name: "David Thorne",
       email: "david.thorne@complianceaudit.demo",
@@ -63,11 +58,13 @@ async function main() {
     },
   });
 
-  console.log("Seeded 4 users across all RBAC roles.");
+  console.log("Verified / seeded 4 core users.");
 
-  // 3. Seed Brand
-  const brand = await prisma.brand.create({
-    data: {
+  // 2. Seed / Upsert Brand
+  const brand = await prisma.brand.upsert({
+    where: { id: "brand_verdanta_01" },
+    update: {},
+    create: {
       id: "brand_verdanta_01",
       name: "Verdanta Foods",
       description: "Fictional packaged-food brand producing wholesome plant-based nutrition snacks and bars. Demo data for CodeAxis Hackathon Round 2.",
@@ -75,15 +72,13 @@ async function main() {
     },
   });
 
-  // 4. Seed Brand Knowledge Centre items
-  const now = new Date();
-  const pastDate = new Date(Date.now() - 365 * 24 * 60 * 60 * 1000 * 2); // 2 years ago
-  const expiredDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000); // Expired 30 days ago
-  const futureDate = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000); // Valid for 1 year
+  // 3. Seed / Upsert Brand Knowledge Centre items
+  const pastDate = new Date(Date.now() - 365 * 24 * 60 * 60 * 1000 * 2);
+  const expiredDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+  const futureDate = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000);
 
-  // Approved Fact: 11 g protein per 100 g
-  await prisma.knowledgeItem.create({
-    data: {
+  const knowledgeDefinitions = [
+    {
       id: "KB-VER-001",
       brandId: brand.id,
       title: "Nutritional Profile: Protein Content",
@@ -97,11 +92,7 @@ async function main() {
       effectiveDate: pastDate,
       expiryDate: futureDate,
     },
-  });
-
-  // Approved Fact: 6 g added sugar per serving
-  await prisma.knowledgeItem.create({
-    data: {
+    {
       id: "KB-VER-002",
       brandId: brand.id,
       title: "Nutritional Profile: Added Sugar",
@@ -115,11 +106,7 @@ async function main() {
       effectiveDate: pastDate,
       expiryDate: futureDate,
     },
-  });
-
-  // Permitted Claim: "source of protein"
-  await prisma.knowledgeItem.create({
-    data: {
+    {
       id: "KB-VER-003",
       brandId: brand.id,
       title: "Permitted Claim: Source of Protein",
@@ -133,11 +120,7 @@ async function main() {
       effectiveDate: pastDate,
       expiryDate: futureDate,
     },
-  });
-
-  // Prohibited Claim: "sugar-free"
-  await prisma.knowledgeItem.create({
-    data: {
+    {
       id: "KB-VER-004",
       brandId: brand.id,
       title: "Prohibited Claim: Sugar-Free",
@@ -151,11 +134,7 @@ async function main() {
       effectiveDate: pastDate,
       expiryDate: futureDate,
     },
-  });
-
-  // Prohibited Claim: "diabetes-friendly"
-  await prisma.knowledgeItem.create({
-    data: {
+    {
       id: "KB-VER-005",
       brandId: brand.id,
       title: "Prohibited Claim: Diabetes-Friendly",
@@ -169,11 +148,7 @@ async function main() {
       effectiveDate: pastDate,
       expiryDate: futureDate,
     },
-  });
-
-  // Mandatory Brand Disclosure
-  await prisma.knowledgeItem.create({
-    data: {
+    {
       id: "KB-VER-006",
       brandId: brand.id,
       title: "Mandatory Brand Disclosure: Sugar & Balanced Diet",
@@ -187,11 +162,7 @@ async function main() {
       effectiveDate: pastDate,
       expiryDate: futureDate,
     },
-  });
-
-  // Expired Fact: Organic certification
-  await prisma.knowledgeItem.create({
-    data: {
+    {
       id: "KB-VER-007",
       brandId: brand.id,
       title: "Expired Certification: 100% Organic Certificate 2023",
@@ -203,13 +174,9 @@ async function main() {
       approvalStatus: ApprovalStatus.APPROVED,
       version: 1,
       effectiveDate: pastDate,
-      expiryDate: expiredDate, // EXPIRED!
+      expiryDate: expiredDate,
     },
-  });
-
-  // Brand Guideline: Tone of Voice
-  await prisma.knowledgeItem.create({
-    data: {
+    {
       id: "KB-VER-008",
       brandId: brand.id,
       title: "Guideline: Transparent Nutrition Tone",
@@ -223,177 +190,163 @@ async function main() {
       effectiveDate: pastDate,
       expiryDate: futureDate,
     },
+  ];
+
+  for (const item of knowledgeDefinitions) {
+    await prisma.knowledgeItem.upsert({
+      where: { id: item.id },
+      update: {},
+      create: item,
+    });
+  }
+
+  console.log("Verified / seeded 8 Knowledge Items without destructive deletes.");
+
+  // 4. Seed initial sample content item if not already existing
+  const existingSample = await prisma.contentItem.findUnique({
+    where: { id: "cnt_sample_01" },
   });
 
-  console.log("Seeded 8 Knowledge Items (including facts, permitted claims, prohibited claims, disclosure, and expired fact).");
+  if (!existingSample) {
+    const sampleContent = await prisma.contentItem.create({
+      data: {
+        id: "cnt_sample_01",
+        brandId: brand.id,
+        campaignName: "Spring Wellness 2026 Launch",
+        title: "Instagram Launch Post: Plant Crunch Bar",
+        contentType: ContentType.SOCIAL_CAPTION,
+        submitterId: agencyUser.id,
+        currentVersionNumber: 1,
+        status: ContentStatus.SUBMITTED,
+      },
+    });
 
-  // 5. Seed a Sample Content Item, Version, and Analysis Run to demonstrate the workflow immediately
-  const sampleContent = await prisma.contentItem.create({
-    data: {
-      id: "cnt_sample_01",
-      brandId: brand.id,
-      campaignName: "Spring Wellness 2026 Launch",
-      title: "Instagram Launch Post: Plant Crunch Bar",
-      contentType: ContentType.SOCIAL_CAPTION,
-      submitterId: agencyUser.id,
-      currentVersionNumber: 1,
-      status: ContentStatus.SUBMITTED,
-    },
-  });
+    const sampleVersion = await prisma.contentVersion.create({
+      data: {
+        id: "ver_sample_01",
+        contentItemId: sampleContent.id,
+        versionNumber: 1,
+        textContent: "Fuel your active day with Verdanta Plant Crunch! Packed with 25g protein per bar, it's 100% sugar-free and completely diabetes-friendly. Certified 100% organic. Grab yours today at 20% off!",
+        submittedById: agencyUser.id,
+        changeNotes: "Initial draft submitted by agency for verification.",
+      },
+    });
 
-  const sampleVersion = await prisma.contentVersion.create({
-    data: {
-      id: "ver_sample_01",
-      contentItemId: sampleContent.id,
-      versionNumber: 1,
-      textContent: "Fuel your active day with Verdanta Plant Crunch! Packed with 25g protein per bar, it's 100% sugar-free and completely diabetes-friendly. Certified 100% organic. Grab yours today at 20% off!",
-      submittedById: agencyUser.id,
-      changeNotes: "Initial draft submitted by agency for verification.",
-    },
-  });
-
-  const sampleRun = await prisma.analysisRun.create({
-    data: {
-      id: "run_sample_01",
-      contentVersionId: sampleVersion.id,
-      provider: "DETERMINISTIC_ONLY",
-      mode: "DETERMINISTIC",
-      status: "COMPLETED",
-      triggeredById: agencyUser.id,
-      summary: "Verification identified 5 policy issues: 2 prohibited claims, 1 factual contradiction, 1 expired evidence citation, and 1 missing mandatory disclosure.",
-    },
-  });
-
-  // Finding 1: Prohibited claim "sugar-free"
-  await prisma.finding.create({
-    data: {
-      analysisRunId: sampleRun.id,
-      type: FindingType.VERIFIED_CONTRADICTION,
-      severity: FindingSeverity.HIGH,
-      affectedText: "100% sugar-free",
-      explanation: "Draft claims '100% sugar-free', directly violating approved fact KB-VER-002 (6 g added sugar per serving) and prohibited claim policy KB-VER-004.",
-      evidenceStatus: EvidenceStatus.VERIFIED,
-      sourceReferenceId: "KB-VER-004",
-      quotedExcerpt: "Prohibited claim: 'sugar-free' is strictly banned. Any claim implying zero or negligible sugar is false and non-compliant.",
-      citationValid: true,
-      suggestedCorrection: "crafted with wholesome plant ingredients and 6 g added raw cane sugar",
-      suggestedCorrectionSupported: true,
-      resolutionStatus: ResolutionStatus.OPEN,
-      requiresHumanReview: true,
-    },
-  });
-
-  // Finding 2: Prohibited claim "diabetes-friendly"
-  await prisma.finding.create({
-    data: {
-      analysisRunId: sampleRun.id,
-      type: FindingType.VERIFIED_CONTRADICTION,
-      severity: FindingSeverity.HIGH,
-      affectedText: "completely diabetes-friendly",
-      explanation: "Draft claims 'completely diabetes-friendly', directly violating prohibited claim policy KB-VER-005 forbidding therapeutic health claims.",
-      evidenceStatus: EvidenceStatus.VERIFIED,
-      sourceReferenceId: "KB-VER-005",
-      quotedExcerpt: "Prohibited claim: 'diabetes-friendly' or any therapeutic or glycemic disease management claim is prohibited.",
-      citationValid: true,
-      suggestedCorrection: "a wholesome source of plant energy for active days",
-      suggestedCorrectionSupported: true,
-      resolutionStatus: ResolutionStatus.OPEN,
-      requiresHumanReview: true,
-    },
-  });
-
-  // Finding 3: Unsupported / Contradictory Claim "25g protein per bar"
-  await prisma.finding.create({
-    data: {
-      analysisRunId: sampleRun.id,
-      type: FindingType.VERIFIED_CONTRADICTION,
-      severity: FindingSeverity.HIGH,
-      affectedText: "Packed with 25g protein per bar",
-      explanation: "Draft claims '25g protein per bar', whereas approved specification KB-VER-001 confirms exactly 11 g protein per 100 g (approximately 4.4 g per 40 g bar).",
-      evidenceStatus: EvidenceStatus.VERIFIED,
-      sourceReferenceId: "KB-VER-001",
-      quotedExcerpt: "Laboratory testing confirms protein concentration measured at exactly 11 g protein per 100 g finished product.",
-      citationValid: true,
-      suggestedCorrection: "Packed with wholesome plant protein (11 g per 100 g), an approved source of protein",
-      suggestedCorrectionSupported: true,
-      resolutionStatus: ResolutionStatus.OPEN,
-      requiresHumanReview: true,
-    },
-  });
-
-  // Finding 4: Expired Evidence "Certified 100% organic"
-  await prisma.finding.create({
-    data: {
-      analysisRunId: sampleRun.id,
-      type: FindingType.INSUFFICIENT_EVIDENCE,
-      severity: FindingSeverity.HIGH,
-      affectedText: "Certified 100% organic",
-      explanation: "The referenced organic certification (KB-VER-007) expired on December 31, 2023. Expired evidence cannot be cited to substantiate current 2026 marketing claims.",
-      evidenceStatus: EvidenceStatus.EXPIRED_EVIDENCE,
-      sourceReferenceId: "KB-VER-007",
-      quotedExcerpt: "Certified organic status granted through December 31, 2023. Expiration noted.",
-      citationValid: false,
-      citationFailureReason: "Referenced knowledge item KB-VER-007 has expired (expired Dec 2023).",
-      suggestedCorrection: "crafted with thoughtfully selected plant-based ingredients",
-      suggestedCorrectionSupported: false,
-      resolutionStatus: ResolutionStatus.OPEN,
-      requiresHumanReview: true,
-    },
-  });
-
-  // Finding 5: Missing Mandatory Brand Disclosure
-  await prisma.finding.create({
-    data: {
-      analysisRunId: sampleRun.id,
-      type: FindingType.POSSIBLE_RISK,
-      severity: FindingSeverity.HIGH,
-      affectedText: "[End of caption]",
-      explanation: "Draft is missing the mandatory brand disclosure: 'Contains added sugar. This product is not a substitute for a balanced diet.' as required by KB-VER-006.",
-      evidenceStatus: EvidenceStatus.VERIFIED,
-      sourceReferenceId: "KB-VER-006",
-      quotedExcerpt: "Mandatory brand disclosure: Contains added sugar. This product is not a substitute for a balanced diet.",
-      citationValid: true,
-      suggestedCorrection: "Contains added sugar. This product is not a substitute for a balanced diet.",
-      suggestedCorrectionSupported: true,
-      resolutionStatus: ResolutionStatus.OPEN,
-      requiresHumanReview: true,
-    },
-  });
-
-  // 6. Seed initial audit log entries
-  await prisma.auditLog.create({
-    data: {
-      action: "CONTENT_SUBMITTED",
-      userId: agencyUser.id,
-      userName: agencyUser.name,
-      userRole: agencyUser.role,
-      entityType: "CONTENT_ITEM",
-      entityId: sampleContent.id,
-      details: JSON.stringify({
-        campaignName: sampleContent.campaignName,
-        title: sampleContent.title,
-        version: 1,
-      }),
-    },
-  });
-
-  await prisma.auditLog.create({
-    data: {
-      action: "ANALYSIS_RUN_COMPLETED",
-      userId: agencyUser.id,
-      userName: agencyUser.name,
-      userRole: agencyUser.role,
-      entityType: "ANALYSIS_RUN",
-      entityId: sampleRun.id,
-      details: JSON.stringify({
+    const sampleRun = await prisma.analysisRun.create({
+      data: {
+        id: "run_sample_01",
+        contentVersionId: sampleVersion.id,
         provider: "DETERMINISTIC_ONLY",
-        findingsCount: 5,
-        highSeverityCount: 5,
-      }),
-    },
-  });
+        mode: "DETERMINISTIC",
+        status: "COMPLETED",
+        triggeredById: agencyUser.id,
+        summary: "Verification identified 5 policy issues: 2 prohibited claims, 1 factual contradiction, 1 expired evidence citation, and 1 missing mandatory disclosure.",
+      },
+    });
 
-  console.log("Seeding complete! Database ready with Verdanta Foods demo ecosystem.");
+    await prisma.finding.createMany({
+      data: [
+        {
+          analysisRunId: sampleRun.id,
+          type: FindingType.VERIFIED_CONTRADICTION,
+          severity: FindingSeverity.HIGH,
+          affectedText: "100% sugar-free",
+          explanation: "Draft claims '100% sugar-free', directly violating approved fact KB-VER-002 (6 g added sugar per serving) and prohibited claim policy KB-VER-004.",
+          evidenceStatus: EvidenceStatus.VERIFIED,
+          sourceReferenceId: "KB-VER-004",
+          quotedExcerpt: "Prohibited claim: 'sugar-free' is strictly banned. Any claim implying zero or negligible sugar is false and non-compliant.",
+          citationValid: true,
+          suggestedCorrection: "crafted with wholesome plant ingredients and 6 g added raw cane sugar",
+          suggestedCorrectionSupported: true,
+          resolutionStatus: ResolutionStatus.OPEN,
+          requiresHumanReview: true,
+        },
+        {
+          analysisRunId: sampleRun.id,
+          type: FindingType.VERIFIED_CONTRADICTION,
+          severity: FindingSeverity.HIGH,
+          affectedText: "completely diabetes-friendly",
+          explanation: "Draft claims 'completely diabetes-friendly', directly violating prohibited claim policy KB-VER-005 forbidding therapeutic health claims.",
+          evidenceStatus: EvidenceStatus.VERIFIED,
+          sourceReferenceId: "KB-VER-005",
+          quotedExcerpt: "Prohibited claim: 'diabetes-friendly' or any therapeutic or glycemic disease management claim is prohibited.",
+          citationValid: true,
+          suggestedCorrection: "a wholesome source of plant energy for active days",
+          suggestedCorrectionSupported: true,
+          resolutionStatus: ResolutionStatus.OPEN,
+          requiresHumanReview: true,
+        },
+        {
+          analysisRunId: sampleRun.id,
+          type: FindingType.VERIFIED_CONTRADICTION,
+          severity: FindingSeverity.HIGH,
+          affectedText: "Packed with 25g protein per bar",
+          explanation: "Draft claims '25g protein per bar', whereas approved specification KB-VER-001 confirms exactly 11 g protein per 100 g.",
+          evidenceStatus: EvidenceStatus.VERIFIED,
+          sourceReferenceId: "KB-VER-001",
+          quotedExcerpt: "Laboratory testing confirms protein concentration measured at exactly 11 g protein per 100 g finished product.",
+          citationValid: true,
+          suggestedCorrection: "Packed with wholesome plant protein (11 g per 100 g), an approved source of protein",
+          suggestedCorrectionSupported: true,
+          resolutionStatus: ResolutionStatus.OPEN,
+          requiresHumanReview: true,
+        },
+        {
+          analysisRunId: sampleRun.id,
+          type: FindingType.INSUFFICIENT_EVIDENCE,
+          severity: FindingSeverity.HIGH,
+          affectedText: "Certified 100% organic",
+          explanation: "The referenced organic certification (KB-VER-007) expired on December 31, 2023. Expired evidence cannot substantiate current marketing claims.",
+          evidenceStatus: EvidenceStatus.EXPIRED_EVIDENCE,
+          sourceReferenceId: "KB-VER-007",
+          quotedExcerpt: "Certified organic status granted through December 31, 2023. Expiration noted.",
+          citationValid: false,
+          citationFailureReason: "Referenced knowledge item KB-VER-007 has expired (expired Dec 2023).",
+          suggestedCorrection: "crafted with thoughtfully selected plant-based ingredients",
+          suggestedCorrectionSupported: false,
+          resolutionStatus: ResolutionStatus.OPEN,
+          requiresHumanReview: true,
+        },
+        {
+          analysisRunId: sampleRun.id,
+          type: FindingType.POSSIBLE_RISK,
+          severity: FindingSeverity.HIGH,
+          affectedText: "[End of caption]",
+          explanation: "Draft is missing the mandatory brand disclosure: 'Contains added sugar. This product is not a substitute for a balanced diet.' as required by KB-VER-006.",
+          evidenceStatus: EvidenceStatus.VERIFIED,
+          sourceReferenceId: "KB-VER-006",
+          quotedExcerpt: "Mandatory brand disclosure: Contains added sugar. This product is not a substitute for a balanced diet.",
+          citationValid: true,
+          suggestedCorrection: "Contains added sugar. This product is not a substitute for a balanced diet.",
+          suggestedCorrectionSupported: true,
+          resolutionStatus: ResolutionStatus.OPEN,
+          requiresHumanReview: true,
+        },
+      ],
+    });
+
+    await prisma.auditLog.create({
+      data: {
+        action: "CONTENT_SUBMITTED",
+        userId: agencyUser.id,
+        userName: agencyUser.name,
+        userRole: agencyUser.role,
+        entityType: "CONTENT_ITEM",
+        entityId: sampleContent.id,
+        details: JSON.stringify({
+          campaignName: sampleContent.campaignName,
+          title: sampleContent.title,
+          version: 1,
+        }),
+      },
+    });
+
+    console.log("Seeded initial demo content and analysis run.");
+  } else {
+    console.log("Demo content already present; preserved existing user submissions.");
+  }
+
+  console.log("Idempotent seed complete. Zero destructive deletes executed.");
 }
 
 main()
