@@ -1,0 +1,286 @@
+// Inkloom AI - Prisma Schema
+// PostgreSQL Database Schema for Content Governance & Verification
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  BRAND_ADMIN       // Brand Admin / Reviewer - can review, approve, override
+  AGENCY_CREATOR    // Agency Creator - submits brand content, cannot self-approve
+  EXTERNAL_CREATOR  // External Creator - receives briefs, submits adapted captions
+  AUDITOR           // Read-only Auditor - full view, no modifications
+}
+
+enum KnowledgeCategory {
+  PRODUCT_FACT
+  PERMITTED_CLAIM
+  PROHIBITED_CLAIM
+  GUIDELINE
+  TERMINOLOGY
+  MANDATORY_DISCLOSURE
+}
+
+enum ApprovalStatus {
+  DRAFT
+  APPROVED
+  REJECTED
+  ARCHIVED
+}
+
+enum ContentType {
+  SOCIAL_CAPTION
+  BLOG_POST
+  PACKAGING_COPY
+  AD_BANNER
+  CREATOR_ADAPTATION
+}
+
+enum ContentStatus {
+  DRAFT
+  SUBMITTED
+  CHANGES_REQUESTED
+  APPROVED
+  REJECTED
+}
+
+enum FindingType {
+  VERIFIED_CONTRADICTION
+  UNSUPPORTED_CLAIM
+  INSUFFICIENT_EVIDENCE
+  POSSIBLE_RISK
+  STYLE_SUGGESTION
+}
+
+enum FindingSeverity {
+  HIGH
+  MEDIUM
+  LOW
+  INFO
+}
+
+enum EvidenceStatus {
+  VERIFIED
+  UNVERIFIED_CITATION
+  NO_EVIDENCE
+  EXPIRED_EVIDENCE
+}
+
+enum ResolutionStatus {
+  OPEN
+  ACCEPTED_CORRECTION
+  MANUALLY_EDITED
+  DISMISSED
+}
+
+enum ReviewDecision {
+  APPROVED
+  REJECTED
+  OVERRIDE
+  CHANGES_REQUESTED
+}
+
+model User {
+  id           String             @id @default(cuid())
+  email        String             @unique
+  name         String
+  role         Role               @default(AGENCY_CREATOR)
+  organization String             @default("Verdanta Ecosystem")
+  avatarUrl    String?
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+  
+  submittedContent   ContentItem[]     @relation("ContentSubmitter")
+  submittedVersions  ContentVersion[]  @relation("VersionSubmitter")
+  reviews            HumanReview[]     @relation("Reviewer")
+  briefSubmissions   CreatorSubmission[] @relation("CreatorSubmissions")
+}
+
+model Brand {
+  id              String          @id @default(cuid())
+  name            String          @unique
+  description     String?
+  isFictionalDemo Boolean         @default(true)
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  knowledgeItems  KnowledgeItem[]
+  contentItems    ContentItem[]
+  creatorBriefs   CreatorBrief[]
+}
+
+model KnowledgeItem {
+  id             String            @id // e.g. "KB-VER-001"
+  brandId        String
+  brand          Brand             @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  title          String
+  content        String            @db.Text
+  category       KnowledgeCategory
+  sourceDocument String?
+  sourceExcerpt  String            @db.Text // Exact excerpt from source document for citation matching
+  owner          String
+  approvalStatus ApprovalStatus    @default(APPROVED)
+  version        Int               @default(1)
+  effectiveDate  DateTime          @default(now())
+  expiryDate     DateTime?
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+
+  @@index([brandId])
+  @@index([category])
+  @@index([approvalStatus])
+}
+
+model ContentItem {
+  id                   String           @id @default(cuid())
+  brandId              String
+  brand                Brand            @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  campaignName         String
+  title                String
+  contentType          ContentType      @default(SOCIAL_CAPTION)
+  submitterId          String
+  submitter            User             @relation("ContentSubmitter", fields: [submitterId], references: [id])
+  currentVersionNumber Int              @default(1)
+  status               ContentStatus    @default(SUBMITTED)
+  createdAt            DateTime         @default(now())
+  updatedAt            DateTime         @updatedAt
+
+  versions             ContentVersion[]
+
+  @@index([brandId])
+  @@index([submitterId])
+}
+
+model ContentVersion {
+  id             String         @id @default(cuid())
+  contentItemId  String
+  contentItem    ContentItem    @relation(fields: [contentItemId], references: [id], onDelete: Cascade)
+  versionNumber  Int
+  textContent    String         @db.Text
+  submittedById  String
+  submittedBy    User           @relation("VersionSubmitter", fields: [submittedById], references: [id])
+  changeNotes    String?
+  status         ContentStatus  @default(SUBMITTED)
+  createdAt      DateTime       @default(now())
+
+  analysisRuns   AnalysisRun[]
+  reviews        HumanReview[]
+  derivedBriefs  CreatorBrief[]
+
+  @@unique([contentItemId, versionNumber])
+  @@index([contentItemId])
+}
+
+model AnalysisRun {
+  id               String      @id @default(cuid())
+  contentVersionId String
+  contentVersion   ContentVersion @relation(fields: [contentVersionId], references: [id], onDelete: Cascade)
+  provider         String      // "DETERMINISTIC_ONLY" | "GEMINI_3_8_FLASH"
+  mode             String      // "DETERMINISTIC" | "AI_ASSISTED"
+  status           String      @default("COMPLETED") // "COMPLETED" | "FAILED"
+  triggeredById    String
+  summary          String?     @db.Text
+  createdAt        DateTime    @default(now())
+
+  findings         Finding[]
+
+  @@index([contentVersionId])
+}
+
+model Finding {
+  id                          String           @id @default(cuid())
+  analysisRunId               String
+  analysisRun                 AnalysisRun      @relation(fields: [analysisRunId], references: [id], onDelete: Cascade)
+  type                        FindingType
+  severity                    FindingSeverity
+  affectedText                String           @db.Text
+  explanation                 String           @db.Text
+  evidenceStatus              EvidenceStatus   @default(NO_EVIDENCE)
+  sourceReferenceId           String?          // KnowledgeItem.id e.g. "KB-VER-001"
+  quotedExcerpt               String?          @db.Text
+  citationValid               Boolean          @default(false)
+  citationFailureReason       String?
+  suggestedCorrection         String?          @db.Text
+  suggestedCorrectionSupported Boolean         @default(false)
+  resolutionStatus            ResolutionStatus @default(OPEN)
+  dismissReason               String?
+  requiresHumanReview         Boolean          @default(false)
+  createdAt                   DateTime         @default(now())
+
+  @@index([analysisRunId])
+  @@index([type])
+}
+
+model HumanReview {
+  id               String         @id @default(cuid())
+  contentVersionId String
+  contentVersion   ContentVersion @relation(fields: [contentVersionId], references: [id], onDelete: Cascade)
+  reviewerId       String
+  reviewer         User           @relation("Reviewer", fields: [reviewerId], references: [id])
+  decision         ReviewDecision
+  notes            String?        @db.Text
+  createdAt        DateTime       @default(now())
+
+  @@index([contentVersionId])
+  @@index([reviewerId])
+}
+
+model CreatorBrief {
+  id                    String              @id @default(cuid())
+  brandId               String
+  brand                 Brand               @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  sourceContentVersionId String
+  sourceContentVersion  ContentVersion      @relation(fields: [sourceContentVersionId], references: [id], onDelete: Cascade)
+  title                 String
+  campaignName          String
+  versionReference      String              // e.g. "Version 2 (Approved by Brand Admin)"
+  permittedClaims       String              @db.Text // JSON string of approved claims
+  prohibitedClaims      String              @db.Text // JSON string of prohibited claims
+  mandatoryDisclosures  String              @db.Text // JSON string of disclosures
+  approvedFacts         String              @db.Text // JSON string of facts
+  guidelines            String              @db.Text // JSON string of guidelines
+  createdAt             DateTime            @default(now())
+
+  creatorSubmissions    CreatorSubmission[]
+
+  @@index([brandId])
+  @@index([sourceContentVersionId])
+}
+
+model CreatorSubmission {
+  id                   String        @id @default(cuid())
+  briefId              String
+  brief                CreatorBrief  @relation(fields: [briefId], references: [id], onDelete: Cascade)
+  creatorId            String
+  creator              User          @relation("CreatorSubmissions", fields: [creatorId], references: [id])
+  title                String
+  caption              String        @db.Text
+  status               ContentStatus @default(SUBMITTED)
+  adaptationDriftFlags String?       @db.Text // JSON string of drift findings
+  createdAt            DateTime      @default(now())
+  updatedAt            DateTime      @updatedAt
+
+  @@index([briefId])
+  @@index([creatorId])
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  action     String   // e.g. "CONTENT_SUBMITTED", "ANALYSIS_RUN", "CONTENT_APPROVED", etc.
+  userId     String
+  userName   String
+  userRole   String
+  entityType String   // "CONTENT", "KNOWLEDGE_ITEM", "BRIEF", "REVIEW", etc.
+  entityId   String
+  details    String   @db.Text // JSON payload
+  createdAt  DateTime @default(now())
+
+  @@index([entityType, entityId])
+  @@index([userId])
+  @@index([createdAt])
+}
