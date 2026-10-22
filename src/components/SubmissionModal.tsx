@@ -231,7 +231,7 @@ export const SubmissionModal: React.FC<SubmissionModalProps> = ({
 
           <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
             <span className="text-[10px] text-slate-500">
-              Evaluated against 8 Verdanta specifications & policies
+              Evaluated against approved brand specifications & policy rules
             </span>
 
             <div className="flex items-center gap-2">

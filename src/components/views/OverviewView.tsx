@@ -31,14 +31,24 @@ export const OverviewView: React.FC<OverviewProps> = ({
 }) => {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchDashboard = async () => {
+    setLoading(true);
+    setError(null);
     try {
       const res = await fetch("/api/dashboard");
+      if (!res.ok) {
+        throw new Error(`Failed to load governance metrics (HTTP ${res.status})`);
+      }
       const json = await res.json();
+      if (!json || typeof json !== "object") {
+        throw new Error("Invalid response format received from dashboard API");
+      }
       setData(json);
-    } catch (e) {
-      console.error(e);
+    } catch (e: any) {
+      console.error("Dashboard metrics fetch error:", e);
+      setError(e.message || "Failed to load dashboard metrics");
     } finally {
       setLoading(false);
     }
@@ -53,6 +63,27 @@ export const OverviewView: React.FC<OverviewProps> = ({
       <div className="py-24 flex flex-col items-center justify-center text-slate-400">
         <div className="w-6 h-6 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin mb-3"></div>
         <p className="text-xs font-medium text-slate-500">Loading governance metrics from PostgreSQL...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="py-16 flex flex-col items-center justify-center max-w-md mx-auto text-center">
+        <div className="w-12 h-12 rounded-xl bg-rose-50 text-rose-600 border border-rose-200 flex items-center justify-center mb-3">
+          <AlertOctagon className="w-6 h-6" />
+        </div>
+        <h3 className="text-sm font-bold text-slate-900 mb-1">Metrics Retrieval Failed</h3>
+        <p className="text-xs text-rose-600 mb-4">{error}</p>
+        <p className="text-[11px] text-slate-400 mb-4">
+          Inkloom AI enforces zero mock data. When the dashboard API fails, values are never fabricated or defaulted to mock numbers.
+        </p>
+        <button
+          onClick={fetchDashboard}
+          className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-lg shadow-xs transition-colors"
+        >
+          Retry Loading Metrics
+        </button>
       </div>
     );
   }
@@ -160,10 +191,10 @@ export const OverviewView: React.FC<OverviewProps> = ({
           </div>
           <div className="mt-2">
             <div className="text-2xl font-bold text-slate-900 tracking-tight">
-              {metrics.approvedTruthItems ?? metrics.totalKnowledge ?? 0}
+              {metrics.approvedTruthItems ?? 0}
             </div>
             <div className="text-[11px] text-slate-500 font-medium mt-0.5">
-              {metrics.activeApprovedKnowledge ?? 7} active specs • {metrics.expiredKnowledge ?? 1} expired
+              {metrics.activeApprovedKnowledge ?? 0} active specs • {metrics.expiredKnowledge ?? 0} expired
             </div>
           </div>
         </div>
@@ -201,9 +232,14 @@ export const OverviewView: React.FC<OverviewProps> = ({
             </span>
           </div>
 
-          <div className="mt-4 space-y-3">
-            {/* 1. Verified Contradictions */}
-            <div>
+          {totalFindings === 0 ? (
+            <div className="py-12 text-center text-xs text-slate-400">
+              No active findings identified across latest content versions.
+            </div>
+          ) : (
+            <div className="mt-4 space-y-3">
+              {/* 1. Verified Contradictions */}
+              <div>
               <div className="flex items-center justify-between text-xs mb-1">
                 <span className="font-medium text-slate-700 flex items-center gap-1.5">
                   <span className="w-2 h-2 rounded-full bg-rose-500"></span>
@@ -312,7 +348,8 @@ export const OverviewView: React.FC<OverviewProps> = ({
               </div>
             </div>
           </div>
-        </div>
+        )}
+      </div>
 
         {/* Smaller Panel: Review Pipeline & Governance Statuses */}
         <div className="lg:col-span-5 saas-card p-5 flex flex-col justify-between">
@@ -402,7 +439,7 @@ export const OverviewView: React.FC<OverviewProps> = ({
                         <div className="text-[11px] text-slate-400">{item.campaignName}</div>
                       </td>
                       <td className="py-3 px-4 text-slate-600">
-                        {item.submitter?.name || "Agency Creator"}
+                        {item.submitter?.name || "Unassigned"}
                       </td>
                       <td className="py-3 px-4 text-slate-500">
                         {new Date(item.updatedAt).toLocaleDateString("en-US", {

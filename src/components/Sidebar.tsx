@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import {
   ShieldCheck,
   LayoutDashboard,
@@ -34,6 +34,27 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onClose,
   aiMode = "AI_ASSISTED",
 }) => {
+  const [health, setHealth] = useState<{
+    database: { reachable: boolean; latencyMs?: number };
+    ai: { configured: boolean; available: boolean; mode: string; provider: string };
+  } | null>(null);
+  const [healthLoading, setHealthLoading] = useState(true);
+
+  useEffect(() => {
+    fetch("/api/health")
+      .then((res) => res.json())
+      .then((data) => {
+        setHealth(data);
+      })
+      .catch(() => {
+        setHealth({
+          database: { reachable: false },
+          ai: { configured: false, available: false, mode: "DETERMINISTIC_ONLY", provider: "Offline" },
+        });
+      })
+      .finally(() => setHealthLoading(false));
+  }, []);
+
   const navItems = [
     { id: "overview", label: "Overview", icon: LayoutDashboard },
     { id: "knowledge", label: "Knowledge Centre", icon: BookOpen },
@@ -195,21 +216,40 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </div>
         </div>
 
-        {/* System Status Indicators */}
-        <div className="px-4 py-2.5 border-t border-slate-100 bg-slate-50/50 text-[11px] text-slate-500 space-y-1">
+        {/* System Status Indicators (Backed by real /api/health) */}
+        <div className="px-4 py-2.5 border-t border-slate-100 bg-slate-50/50 text-[11px] text-slate-500 space-y-1.5">
           <div className="flex items-center justify-between">
             <span className="flex items-center gap-1.5">
               <Database className="w-3.5 h-3.5 text-slate-400" />
               <span>PostgreSQL</span>
             </span>
-            <span className="text-emerald-600 font-medium flex items-center gap-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-              Live
-            </span>
+            {healthLoading ? (
+              <span className="text-slate-400 text-[10px]">Pinging...</span>
+            ) : health?.database?.reachable ? (
+              <span className="text-emerald-600 font-medium flex items-center gap-1 text-[10px]">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                Reachable ({health.database.latencyMs ?? "<1"}ms)
+              </span>
+            ) : (
+              <span className="text-rose-600 font-medium flex items-center gap-1 text-[10px]">
+                <span className="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
+                Unreachable
+              </span>
+            )}
           </div>
           <div className="flex items-center justify-between text-[10px] text-slate-400 pt-0.5">
-            <span>Engine: Deterministic + Gemini</span>
-            <span className="text-indigo-600 font-medium">Layer 1 & 2</span>
+            <span className="truncate pr-1">
+              {health?.ai?.available ? "AI-Assisted (Gemini)" : "Deterministic Rules"}
+            </span>
+            <span
+              className={`font-semibold px-1.5 py-0.2 rounded border shrink-0 ${
+                health?.ai?.available
+                  ? "bg-indigo-50 text-indigo-700 border-indigo-200"
+                  : "bg-slate-100 text-slate-600 border-slate-200"
+              }`}
+            >
+              {health?.ai?.available ? "Gemini Live" : "Grounded"}
+            </span>
           </div>
         </div>
 

@@ -28,27 +28,38 @@ export const CreatorBriefsView: React.FC<CreatorBriefsProps> = ({ currentUser })
   const [approvedVersions, setApprovedVersions] = useState<any[]>([]);
   const [selectedBriefId, setSelectedBriefId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [briefsError, setBriefsError] = useState<string | null>(null);
 
   // External Creator Adaptation Form State
   const [creatorCaption, setCreatorCaption] = useState("");
   const [creatorTitle, setCreatorTitle] = useState("TikTok Video Caption Adaptation");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [lastSubmissionResult, setLastSubmissionResult] = useState<any>(null);
+  const [submissionError, setSubmissionError] = useState<string | null>(null);
 
   // Generate Brief Modal State
   const [showGenerateModal, setShowGenerateModal] = useState(false);
   const [selectedVersionId, setSelectedVersionId] = useState<string>("");
+  const [modalCreatorHandle, setModalCreatorHandle] = useState("@verdanta_creator");
+  const [modalCreatorPlatform, setModalCreatorPlatform] = useState("INSTAGRAM");
+  const [generateError, setGenerateError] = useState<string | null>(null);
 
   const fetchBriefs = async () => {
     try {
+      setLoading(true);
+      setBriefsError(null);
       const res = await fetch("/api/briefs");
+      if (!res.ok) {
+        throw new Error(`Failed to load creator briefs (HTTP ${res.status})`);
+      }
       const json = await res.json();
       setBriefs(json || []);
       if (json && json.length > 0 && !selectedBriefId) {
         setSelectedBriefId(json[0].id);
       }
-    } catch (e) {
-      console.error(e);
+    } catch (e: any) {
+      console.error("Fetch briefs error:", e);
+      setBriefsError(e.message || "Failed to load creator briefs");
     } finally {
       setLoading(false);
     }
@@ -57,6 +68,7 @@ export const CreatorBriefsView: React.FC<CreatorBriefsProps> = ({ currentUser })
   const fetchApprovedContent = async () => {
     try {
       const res = await fetch("/api/content");
+      if (!res.ok) return;
       const json = await res.json();
       const approved: any[] = [];
       json.forEach((item: any) => {
@@ -76,7 +88,7 @@ export const CreatorBriefsView: React.FC<CreatorBriefsProps> = ({ currentUser })
         setSelectedVersionId(approved[0].versionId);
       }
     } catch (e) {
-      console.error(e);
+      console.error("Fetch approved content error:", e);
     }
   };
 
@@ -88,6 +100,7 @@ export const CreatorBriefsView: React.FC<CreatorBriefsProps> = ({ currentUser })
   const handleGenerateBrief = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedVersionId) return;
+    setGenerateError(null);
 
     try {
       const res = await fetch("/api/briefs", {
@@ -95,18 +108,22 @@ export const CreatorBriefsView: React.FC<CreatorBriefsProps> = ({ currentUser })
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           approvedContentVersionId: selectedVersionId,
-          creatorHandle: "@verdanta_creator",
-          creatorPlatform: "INSTAGRAM",
+          creatorHandle: modalCreatorHandle,
+          creatorPlatform: modalCreatorPlatform,
         }),
       });
       const data = await res.json();
-      if (res.ok) {
-        setShowGenerateModal(false);
-        await fetchBriefs();
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to generate brief from approved copy.");
+      }
+      setShowGenerateModal(false);
+      await fetchBriefs();
+      if (data.brief?.id) {
         setSelectedBriefId(data.brief.id);
       }
-    } catch (e) {
-      console.error(e);
+    } catch (e: any) {
+      console.error("Generate brief error:", e);
+      setGenerateError(e.message || "Failed to generate brief");
     }
   };
 
@@ -116,6 +133,7 @@ export const CreatorBriefsView: React.FC<CreatorBriefsProps> = ({ currentUser })
 
     setIsSubmitting(true);
     setLastSubmissionResult(null);
+    setSubmissionError(null);
 
     try {
       const res = await fetch(`/api/briefs/${selectedBriefId}/submissions`, {
@@ -129,9 +147,13 @@ export const CreatorBriefsView: React.FC<CreatorBriefsProps> = ({ currentUser })
       });
 
       const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to verify caption drift.");
+      }
       setLastSubmissionResult(data);
-    } catch (e) {
-      console.error(e);
+    } catch (e: any) {
+      console.error("Creator check error:", e);
+      setSubmissionError(e.message || "Failed to verify caption drift");
     } finally {
       setIsSubmitting(false);
     }
@@ -161,6 +183,20 @@ export const CreatorBriefsView: React.FC<CreatorBriefsProps> = ({ currentUser })
 
       {loading ? (
         <div className="py-20 text-center text-xs text-slate-400">Loading Creator Briefs...</div>
+      ) : briefsError ? (
+        <div className="py-16 text-center text-xs saas-card max-w-md mx-auto p-6 space-y-3">
+          <div className="w-10 h-10 rounded-full bg-rose-50 text-rose-600 flex items-center justify-center mx-auto">
+            <AlertOctagon className="w-5 h-5" />
+          </div>
+          <h3 className="text-sm font-bold text-slate-900">Failed to Retrieve Creator Briefs</h3>
+          <p className="text-xs text-rose-600">{briefsError}</p>
+          <button
+            onClick={fetchBriefs}
+            className="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg shadow-2xs"
+          >
+            Retry
+          </button>
+        </div>
       ) : briefs.length === 0 ? (
         <div className="py-16 text-center text-xs text-slate-500 saas-card">
           No creator briefs generated yet. Approve a marketing draft in the Correction Studio to derive a brief.
@@ -348,6 +384,13 @@ export const CreatorBriefsView: React.FC<CreatorBriefsProps> = ({ currentUser })
                     </div>
                   </form>
 
+                  {submissionError && (
+                    <div className="p-3 rounded-lg border border-rose-200 bg-rose-50 text-rose-700 text-xs flex items-center gap-2">
+                      <AlertOctagon className="w-4 h-4 shrink-0 text-rose-600" />
+                      <span>{submissionError}</span>
+                    </div>
+                  )}
+
                   {/* Drift Check Result */}
                   {lastSubmissionResult && (
                     <div
@@ -414,6 +457,13 @@ export const CreatorBriefsView: React.FC<CreatorBriefsProps> = ({ currentUser })
               </button>
             </div>
 
+            {generateError && (
+              <div className="p-2.5 rounded-lg border border-rose-200 bg-rose-50 text-rose-700 text-xs flex items-center gap-2">
+                <AlertOctagon className="w-4 h-4 shrink-0 text-rose-600" />
+                <span>{generateError}</span>
+              </div>
+            )}
+
             <p className="text-slate-600 leading-relaxed">
               Creator briefs can only be derived from approved marketing versions. Select an approved version below:
             </p>
@@ -438,6 +488,33 @@ export const CreatorBriefsView: React.FC<CreatorBriefsProps> = ({ currentUser })
                     ))}
                   </select>
                 )}
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block font-semibold text-slate-700 mb-1">Target Handle</label>
+                  <input
+                    type="text"
+                    required
+                    value={modalCreatorHandle}
+                    onChange={(e) => setModalCreatorHandle(e.target.value)}
+                    placeholder="@creator_handle"
+                    className="w-full px-3 py-1.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                  />
+                </div>
+                <div>
+                  <label className="block font-semibold text-slate-700 mb-1">Platform</label>
+                  <select
+                    value={modalCreatorPlatform}
+                    onChange={(e) => setModalCreatorPlatform(e.target.value)}
+                    className="w-full px-3 py-1.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                  >
+                    <option value="INSTAGRAM">Instagram</option>
+                    <option value="TIKTOK">TikTok</option>
+                    <option value="YOUTUBE">YouTube</option>
+                    <option value="LINKEDIN">LinkedIn</option>
+                  </select>
+                </div>
               </div>
 
               <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">

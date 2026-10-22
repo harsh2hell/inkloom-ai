@@ -24,16 +24,23 @@ export const ContentListView: React.FC<ContentListProps> = ({
 }) => {
   const [items, setItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
 
   const fetchContent = async () => {
+    setLoading(true);
+    setError(null);
     try {
       const res = await fetch("/api/content");
+      if (!res.ok) {
+        throw new Error(`Failed to load content reviews (HTTP ${res.status})`);
+      }
       const json = await res.json();
       setItems(json || []);
-    } catch (e) {
-      console.error(e);
+    } catch (e: any) {
+      console.error("Content fetch error:", e);
+      setError(e.message || "Failed to load content reviews");
     } finally {
       setLoading(false);
     }
@@ -127,6 +134,20 @@ export const ContentListView: React.FC<ContentListProps> = ({
       <div className="saas-card overflow-hidden">
         {loading ? (
           <div className="py-20 text-center text-xs text-slate-400">Loading Content Pipeline...</div>
+        ) : error ? (
+          <div className="py-16 text-center text-xs p-6 space-y-3 max-w-md mx-auto">
+            <div className="w-10 h-10 rounded-full bg-rose-50 text-rose-600 flex items-center justify-center mx-auto">
+              <ShieldAlert className="w-5 h-5" />
+            </div>
+            <h3 className="text-sm font-bold text-slate-900">Failed to Retrieve Content Pipeline</h3>
+            <p className="text-xs text-rose-600">{error}</p>
+            <button
+              onClick={fetchContent}
+              className="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg shadow-2xs"
+            >
+              Retry
+            </button>
+          </div>
         ) : filteredItems.length === 0 ? (
           <div className="py-16 text-center text-xs text-slate-500">
             No marketing content matches the selected filter. Click &ldquo;New Content Submission&rdquo; to begin.
@@ -169,10 +190,10 @@ export const ContentListView: React.FC<ContentListProps> = ({
                       </td>
                       <td className="py-3 px-4">
                         <div className="text-slate-800 font-medium">
-                          {item.submitter?.name || "Agency Creator"}
+                          {item.submitter?.name || "Unassigned Submitter"}
                         </div>
                         <div className="text-[10px] text-slate-400">
-                          {item.submitter?.organization || "Apex Creative"}
+                          {item.submitter?.organization || "—"}
                         </div>
                       </td>
                       <td className="py-3 px-4">

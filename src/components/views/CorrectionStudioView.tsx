@@ -60,21 +60,25 @@ export const CorrectionStudioView: React.FC<CorrectionStudioProps> = ({
 
   // Review Status Message
   const [statusMessage, setStatusMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [studioError, setStudioError] = useState<string | null>(null);
 
   const fetchContentDetails = async (id: string) => {
     try {
       setLoading(true);
+      setStudioError(null);
       const res = await fetch(`/api/content/${id}`);
       const json = await res.json();
-      if (res.ok) {
-        setContent(json);
-        const latest = json.versions?.[0];
-        if (latest) {
-          setEditedText(latest.textContent);
-        }
+      if (!res.ok) {
+        throw new Error(json.error || `Failed to retrieve content item (HTTP ${res.status})`);
       }
-    } catch (e) {
-      console.error(e);
+      setContent(json);
+      const latest = json.versions?.[0];
+      if (latest) {
+        setEditedText(latest.textContent);
+      }
+    } catch (e: any) {
+      console.error("Correction Studio fetch error:", e);
+      setStudioError(e.message || "Failed to load campaign data");
     } finally {
       setLoading(false);
     }
@@ -85,7 +89,10 @@ export const CorrectionStudioView: React.FC<CorrectionStudioProps> = ({
       fetchContentDetails(contentId);
     } else {
       fetch("/api/content")
-        .then((r) => r.json())
+        .then((r) => {
+          if (!r.ok) throw new Error("Could not load content list");
+          return r.json();
+        })
         .then((items) => {
           if (items && items.length > 0) {
             fetchContentDetails(items[0].id);
@@ -93,7 +100,10 @@ export const CorrectionStudioView: React.FC<CorrectionStudioProps> = ({
             setLoading(false);
           }
         })
-        .catch(() => setLoading(false));
+        .catch((e) => {
+          setStudioError(e.message || "Failed to load content list");
+          setLoading(false);
+        });
     }
   }, [contentId]);
 
@@ -102,6 +112,24 @@ export const CorrectionStudioView: React.FC<CorrectionStudioProps> = ({
       <div className="py-24 flex flex-col items-center justify-center text-slate-400">
         <div className="w-6 h-6 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin mb-3"></div>
         <p className="text-xs font-medium text-slate-500">Loading Correction Studio & verification trace...</p>
+      </div>
+    );
+  }
+
+  if (studioError) {
+    return (
+      <div className="p-8 saas-card text-center max-w-md mx-auto space-y-3">
+        <div className="w-10 h-10 rounded-full bg-rose-50 text-rose-600 flex items-center justify-center mx-auto">
+          <AlertOctagon className="w-5 h-5" />
+        </div>
+        <h3 className="text-sm font-bold text-slate-900">Campaign Retrieval Failed</h3>
+        <p className="text-xs text-rose-600">{studioError}</p>
+        <button
+          onClick={() => contentId ? fetchContentDetails(contentId) : window.location.reload()}
+          className="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-lg shadow-2xs"
+        >
+          Retry
+        </button>
       </div>
     );
   }
@@ -137,10 +165,9 @@ export const CorrectionStudioView: React.FC<CorrectionStudioProps> = ({
     } else {
       newDraft = `${newDraft.trim()} ${finding.suggestedCorrection}`;
     }
-    setEditedText(newDraft);
 
     try {
-      await fetch(`/api/findings/${finding.id}`, {
+      const res = await fetch(`/api/findings/${finding.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -151,13 +178,23 @@ export const CorrectionStudioView: React.FC<CorrectionStudioProps> = ({
         }),
       });
 
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to persist accepted correction to database.");
+      }
+
+      setEditedText(newDraft);
       finding.resolutionStatus = "ACCEPTED_CORRECTION";
       setStatusMessage({
         type: "success",
         text: `Applied correction: "${finding.suggestedCorrection}". Re-run verification to lock into new version.`,
       });
-    } catch (e) {
-      console.error(e);
+    } catch (e: any) {
+      console.error("Apply correction error:", e);
+      setStatusMessage({
+        type: "error",
+        text: e.message || "Failed to persist correction to database.",
+      });
     }
   };
 
@@ -166,7 +203,7 @@ export const CorrectionStudioView: React.FC<CorrectionStudioProps> = ({
     if (!dismissingFindingId || !dismissReason.trim()) return;
 
     try {
-      await fetch(`/api/findings/${dismissingFindingId}`, {
+      const res = await fetch(`/api/findings/${dismissingFindingId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -177,6 +214,11 @@ export const CorrectionStudioView: React.FC<CorrectionStudioProps> = ({
           userRole: currentUser.role,
         }),
       });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to persist dismissal to database.");
+      }
 
       const f = findings.find((x: any) => x.id === dismissingFindingId);
       if (f) {
@@ -190,8 +232,12 @@ export const CorrectionStudioView: React.FC<CorrectionStudioProps> = ({
         type: "success",
         text: "Finding dismissed with recorded justification and logged to immutable audit trail.",
       });
-    } catch (e) {
-      console.error(e);
+    } catch (e: any) {
+      console.error("Dismiss finding error:", e);
+      setStatusMessage({
+        type: "error",
+        text: e.message || "Failed to record finding dismissal on server.",
+      });
     }
   };
 

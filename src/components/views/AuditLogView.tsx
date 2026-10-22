@@ -17,6 +17,7 @@ import {
 export const AuditLogView: React.FC = () => {
   const [logs, setLogs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [auditError, setAuditError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [selectedEntity, setSelectedEntity] = useState("ALL");
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -24,11 +25,16 @@ export const AuditLogView: React.FC = () => {
   const fetchLogs = async () => {
     try {
       setLoading(true);
+      setAuditError(null);
       const res = await fetch(`/api/audit?entityType=${selectedEntity}&limit=100`);
+      if (!res.ok) {
+        throw new Error(`Failed to load audit events (HTTP ${res.status})`);
+      }
       const json = await res.json();
       setLogs(json || []);
-    } catch (e) {
-      console.error(e);
+    } catch (e: any) {
+      console.error("Audit log fetch error:", e);
+      setAuditError(e.message || "Failed to load audit logs");
     } finally {
       setLoading(false);
     }
@@ -130,6 +136,20 @@ export const AuditLogView: React.FC = () => {
       <div className="saas-card overflow-hidden">
         {loading ? (
           <div className="py-20 text-center text-xs text-slate-400">Loading Audit Log Trail...</div>
+        ) : auditError ? (
+          <div className="py-16 text-center text-xs p-6 space-y-3 max-w-md mx-auto">
+            <div className="w-10 h-10 rounded-full bg-rose-50 text-rose-600 flex items-center justify-center mx-auto">
+              <ShieldCheck className="w-5 h-5 text-rose-600" />
+            </div>
+            <h3 className="text-sm font-bold text-slate-900">Failed to Retrieve Audit Log</h3>
+            <p className="text-xs text-rose-600">{auditError}</p>
+            <button
+              onClick={fetchLogs}
+              className="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg shadow-2xs"
+            >
+              Retry
+            </button>
+          </div>
         ) : filteredLogs.length === 0 ? (
           <div className="py-16 text-center text-xs text-slate-500">
             No audit records found matching the filter criteria.

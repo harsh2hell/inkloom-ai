@@ -13,59 +13,45 @@ import { CreatorBriefsView } from "@/components/views/CreatorBriefsView";
 import { AuditLogView } from "@/components/views/AuditLogView";
 import { JudgeGuideView } from "@/components/views/JudgeGuideView";
 
-const DEFAULT_USERS: UserProfile[] = [
-  {
-    id: "usr_admin_01",
-    name: "Sarah Chen",
-    email: "sarah.chen@verdantafoods.demo",
-    role: "BRAND_ADMIN",
-    organization: "Verdanta Foods Governance",
-  },
-  {
-    id: "usr_agency_01",
-    name: "Alex Rivera",
-    email: "alex.rivera@apexmarketing.demo",
-    role: "AGENCY_CREATOR",
-    organization: "Apex Creative Agency",
-  },
-  {
-    id: "usr_creator_01",
-    name: "Maya Patel",
-    email: "maya.creates@contentlab.demo",
-    role: "EXTERNAL_CREATOR",
-    organization: "Independent Creator Studio",
-  },
-  {
-    id: "usr_auditor_01",
-    name: "David Thorne",
-    email: "david.thorne@complianceaudit.demo",
-    role: "AUDITOR",
-    organization: "Global Standards Assurance",
-  },
-];
+import { ShieldAlert } from "lucide-react";
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState("overview");
-  const [currentUser, setCurrentUser] = useState<UserProfile>(DEFAULT_USERS[0]);
-  const [availableUsers, setAvailableUsers] = useState<UserProfile[]>(DEFAULT_USERS);
+  const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
+  const [availableUsers, setAvailableUsers] = useState<UserProfile[]>([]);
+  const [userLoading, setUserLoading] = useState(true);
+  const [userError, setUserError] = useState<string | null>(null);
   const [isSubmitModalOpen, setIsSubmitModalOpen] = useState(false);
   const [studioContentId, setStudioContentId] = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
-  // Fetch initial users from DB
+  // Fetch initial users from PostgreSQL
+  const fetchUsers = async () => {
+    setUserLoading(true);
+    setUserError(null);
+    try {
+      const r = await fetch("/api/auth/current-user");
+      if (!r.ok) {
+        throw new Error(`Failed to load user accounts (HTTP ${r.status})`);
+      }
+      const data = await r.json();
+      if (data.availableUsers && data.availableUsers.length > 0) {
+        setAvailableUsers(data.availableUsers);
+        setCurrentUser(data.currentUser || data.availableUsers[0]);
+      } else {
+        throw new Error("No user records returned from PostgreSQL.");
+      }
+    } catch (e: any) {
+      console.error("Could not fetch users", e);
+      setUserError(e.message || "Unable to reach user authentication API");
+    } finally {
+      setUserLoading(false);
+    }
+  };
+
   useEffect(() => {
-    fetch("/api/auth/current-user")
-      .then((r) => r.json())
-      .then((data) => {
-        if (data.availableUsers && data.availableUsers.length > 0) {
-          setAvailableUsers(data.availableUsers);
-          if (data.currentUser) {
-            setCurrentUser(data.currentUser);
-          }
-        }
-      })
-      .catch((e) => console.error("Could not fetch users", e));
+    fetchUsers();
   }, []);
 
   const handleOpenStudio = (contentId: string) => {
@@ -78,6 +64,38 @@ export default function Home() {
     setActiveTab("studio");
     setRefreshKey((k) => k + 1);
   };
+
+  if (userLoading) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6 text-slate-500">
+        <div className="w-8 h-8 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin mb-3"></div>
+        <p className="text-xs font-semibold text-slate-700">Connecting to PostgreSQL & verifying auth personas...</p>
+      </div>
+    );
+  }
+
+  if (userError || !currentUser) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6 text-slate-600">
+        <div className="max-w-md w-full bg-white p-6 rounded-xl border border-rose-200 shadow-sm text-center space-y-3">
+          <div className="w-10 h-10 rounded-full bg-rose-50 text-rose-600 flex items-center justify-center mx-auto">
+            <ShieldAlert className="w-5 h-5" />
+          </div>
+          <h2 className="text-sm font-bold text-slate-900">Database Authentication Error</h2>
+          <p className="text-xs text-rose-600 font-medium">{userError || "Failed to load database users"}</p>
+          <p className="text-[11px] text-slate-400">
+            Zero mock data enforced: The application will not substitute fake user personas when PostgreSQL is unavailable.
+          </p>
+          <button
+            onClick={fetchUsers}
+            className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-lg shadow-xs transition-colors"
+          >
+            Retry Connection
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 flex">

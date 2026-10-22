@@ -21,9 +21,11 @@ export const KnowledgeView: React.FC = () => {
   const [items, setItems] = useState<any[]>([]);
   const [counts, setCounts] = useState<any>({});
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("ALL");
   const [showAddModal, setShowAddModal] = useState(false);
+  const [addError, setAddError] = useState<string | null>(null);
 
   // New Item Form State
   const [newTitle, setNewTitle] = useState("");
@@ -34,13 +36,19 @@ export const KnowledgeView: React.FC = () => {
   const [newOwner, setNewOwner] = useState("Brand Regulatory Board");
 
   const fetchItems = async () => {
+    setLoading(true);
+    setError(null);
     try {
       const res = await fetch(`/api/knowledge?category=${selectedCategory}`);
+      if (!res.ok) {
+        throw new Error(`Failed to load knowledge items (HTTP ${res.status})`);
+      }
       const json = await res.json();
       setItems(json.items || []);
       setCounts(json.counts || {});
-    } catch (e) {
-      console.error(e);
+    } catch (e: any) {
+      console.error("Knowledge fetch error:", e);
+      setError(e.message || "Failed to load knowledge base");
     } finally {
       setLoading(false);
     }
@@ -52,6 +60,7 @@ export const KnowledgeView: React.FC = () => {
 
   const handleAddItem = async (e: React.FormEvent) => {
     e.preventDefault();
+    setAddError(null);
     try {
       const res = await fetch("/api/knowledge", {
         method: "POST",
@@ -66,16 +75,19 @@ export const KnowledgeView: React.FC = () => {
           approvalStatus: "APPROVED",
         }),
       });
-      if (res.ok) {
-        setShowAddModal(false);
-        setNewTitle("");
-        setNewContent("");
-        setNewSourceDoc("");
-        setNewSourceExcerpt("");
-        fetchItems();
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to create knowledge item");
       }
-    } catch (e) {
-      console.error(e);
+      setShowAddModal(false);
+      setNewTitle("");
+      setNewContent("");
+      setNewSourceDoc("");
+      setNewSourceExcerpt("");
+      fetchItems();
+    } catch (e: any) {
+      console.error("Error creating knowledge item:", e);
+      setAddError(e.message || "Failed to create knowledge item");
     }
   };
 
@@ -166,6 +178,20 @@ export const KnowledgeView: React.FC = () => {
       {/* Knowledge Item Grid */}
       {loading ? (
         <div className="py-20 text-center text-xs text-slate-400">Loading Knowledge Items...</div>
+      ) : error ? (
+        <div className="py-16 text-center text-xs saas-card max-w-md mx-auto p-6 space-y-3">
+          <div className="w-10 h-10 rounded-full bg-rose-50 text-rose-600 flex items-center justify-center mx-auto">
+            <AlertCircle className="w-5 h-5" />
+          </div>
+          <h3 className="text-sm font-bold text-slate-900">Failed to Retrieve Knowledge Base</h3>
+          <p className="text-xs text-rose-600">{error}</p>
+          <button
+            onClick={fetchItems}
+            className="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg shadow-2xs"
+          >
+            Retry
+          </button>
+        </div>
       ) : filteredItems.length === 0 ? (
         <div className="py-16 text-center text-xs text-slate-500 saas-card">
           No knowledge items match the search query or filter.
@@ -174,7 +200,10 @@ export const KnowledgeView: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredItems.map((item) => {
             const badge = getCategoryBadge(item.category);
-            const isExpired = item.expiryDate && new Date(item.expiryDate) < new Date();
+            const isExpired = Boolean(item.isExpired);
+            const formattedExpiry = item.expiryDate
+              ? new Date(item.expiryDate).toLocaleDateString("en-US", { month: "short", year: "numeric" })
+              : "";
             return (
               <div
                 key={item.id}
@@ -194,7 +223,7 @@ export const KnowledgeView: React.FC = () => {
                       </span>
                       {isExpired && (
                         <span className="text-[10px] font-semibold px-2 py-0.5 rounded border bg-amber-50 text-amber-700 border-amber-300">
-                          Expired Dec 2023
+                          Expired {formattedExpiry}
                         </span>
                       )}
                     </div>

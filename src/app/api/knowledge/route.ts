@@ -22,16 +22,21 @@ export async function GET(req: NextRequest) {
       orderBy: { createdAt: "desc" },
     });
 
+    const mappedItems = items.map((item) => ({
+      ...item,
+      isExpired: item.expiryDate ? new Date(item.expiryDate).getTime() < Date.now() : false,
+    }));
+
     const counts = {
       total: items.length,
       productFacts: items.filter((i) => i.category === KnowledgeCategory.PRODUCT_FACT).length,
       permittedClaims: items.filter((i) => i.category === KnowledgeCategory.PERMITTED_CLAIM).length,
       prohibitedClaims: items.filter((i) => i.category === KnowledgeCategory.PROHIBITED_CLAIM).length,
       mandatoryDisclosures: items.filter((i) => i.category === KnowledgeCategory.MANDATORY_DISCLOSURE).length,
-      expired: items.filter((i) => i.expiryDate && new Date(i.expiryDate) < new Date()).length,
+      expired: mappedItems.filter((i) => i.isExpired).length,
     };
 
-    return NextResponse.json({ items, counts });
+    return NextResponse.json({ items: mappedItems, counts });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
