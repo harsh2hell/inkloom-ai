@@ -11,9 +11,9 @@ import {
   History,
   Compass,
   X,
-  User,
   Database,
-  CheckCircle2,
+  Settings,
+  Sparkles,
 } from "lucide-react";
 import { UserProfile } from "./Navbar";
 
@@ -32,13 +32,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
   currentUser,
   isOpen,
   onClose,
-  aiMode = "AI_ASSISTED",
 }) => {
   const [health, setHealth] = useState<{
     database: { reachable: boolean; latencyMs?: number };
     ai: { configured: boolean; available: boolean; mode: string; provider: string };
   } | null>(null);
-  const [healthLoading, setHealthLoading] = useState(true);
 
   useEffect(() => {
     fetch("/api/health")
@@ -51,226 +49,125 @@ export const Sidebar: React.FC<SidebarProps> = ({
           database: { reachable: false },
           ai: { configured: false, available: false, mode: "DETERMINISTIC_ONLY", provider: "Offline" },
         });
-      })
-      .finally(() => setHealthLoading(false));
+      });
   }, []);
 
   const navItems = [
-    { id: "overview", label: "Overview", icon: LayoutDashboard },
-    { id: "knowledge", label: "Knowledge Centre", icon: BookOpen },
-    { id: "content", label: "Content Reviews", icon: FileCheck2 },
+    { id: "overview", label: "Dashboard Overview", icon: LayoutDashboard },
+    { id: "content", label: "Content Reviews & Pipeline", icon: FileCheck2 },
     { id: "studio", label: "Correction Studio", icon: SlidersHorizontal, highlight: true },
+    { id: "knowledge", label: "Brand Knowledge Centre", icon: BookOpen },
     { id: "briefs", label: "Creator Briefs", icon: FileText },
-    { id: "audit", label: "Audit Log", icon: History },
+    { id: "audit", label: "Compliance Audit Trail", icon: History },
+    { id: "guide", label: "Judge Evaluation Guide", icon: Compass },
   ];
-
-  const secondaryNavItems = [
-    { id: "guide", label: "Judge Guide", icon: Compass },
-  ];
-
-  const getRoleBadge = (role: string) => {
-    switch (role) {
-      case "BRAND_ADMIN":
-        return { label: "Brand Admin", color: "bg-purple-50 text-purple-700 border-purple-200" };
-      case "AGENCY_CREATOR":
-        return { label: "Agency Creator", color: "bg-blue-50 text-blue-700 border-blue-200" };
-      case "EXTERNAL_CREATOR":
-        return { label: "Creator", color: "bg-emerald-50 text-emerald-700 border-emerald-200" };
-      case "AUDITOR":
-        return { label: "Auditor", color: "bg-amber-50 text-amber-700 border-amber-200" };
-      default:
-        return { label: role, color: "bg-slate-50 text-slate-700 border-slate-200" };
-    }
-  };
-
-  const badge = getRoleBadge(currentUser.role);
 
   return (
     <>
-      {/* Mobile Backdrop */}
+      {/* Mobile Drawer Backdrop */}
       {isOpen && (
         <div
-          className="fixed inset-0 z-40 bg-slate-900/40 backdrop-blur-xs lg:hidden transition-opacity"
+          className="fixed inset-0 z-40 bg-slate-900/30 backdrop-blur-xs lg:hidden transition-opacity"
           onClick={onClose}
         />
       )}
 
-      {/* Sidebar Container */}
+      {/* Desktop Neo-Modern Vertical Dock Rail / Mobile Drawer */}
       <aside
-        className={`fixed top-0 bottom-0 left-0 z-50 w-60 bg-white border-r border-slate-200/90 flex flex-col transition-transform duration-200 ease-in-out lg:translate-x-0 ${
+        className={`fixed lg:sticky top-0 lg:top-5 bottom-0 lg:bottom-auto left-0 z-50 lg:z-10 w-20 lg:w-20 h-full lg:h-[calc(100vh-2.5rem)] bg-white rounded-none lg:rounded-[30px] border-r lg:border border-slate-200/70 shadow-[0_6px_28px_rgba(15,23,42,0.04)] flex flex-col items-center py-5 justify-between transition-transform duration-200 ease-in-out lg:translate-x-0 ${
           isOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-        {/* Brand & Workspace Header */}
-        <div className="p-4 border-b border-slate-100 flex items-center justify-between">
-          <div
-            className="flex items-center gap-2.5 cursor-pointer"
+        {/* Top: Brand Logo Pill (matching the hi pill in reference image) */}
+        <div className="flex flex-col items-center gap-2">
+          <button
             onClick={() => {
               setActiveTab("overview");
               onClose();
             }}
+            className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-sky-400 text-white flex items-center justify-center font-bold text-base shadow-[0_6px_18px_rgba(99,102,241,0.35)] transition-transform hover:scale-105 active:scale-95 group relative"
+            title="Inkloom AI — Home"
+            aria-label="Inkloom AI Home"
           >
-            <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center text-white shadow-xs">
-              <ShieldCheck className="w-5 h-5" />
+            <div className="flex items-center gap-0.5">
+              <span className="tracking-tighter font-extrabold text-sm">i</span>
+              <span className="w-1.5 h-1.5 rounded-full bg-white mb-2"></span>
             </div>
-            <div>
-              <div className="flex items-center gap-1.5">
-                <span className="font-bold text-slate-900 text-base tracking-tight">Inkloom</span>
-                <span className="px-1.5 py-0.2 rounded text-[10px] font-semibold uppercase tracking-wider bg-indigo-50 text-indigo-700 border border-indigo-200/60">
-                  AI Gov
-                </span>
-              </div>
-              <p className="text-[11px] text-slate-500 font-medium">Claims & Policy Engine</p>
-            </div>
-          </div>
+            {/* Tooltip */}
+            <span className="absolute left-16 top-1/2 -translate-y-1/2 bg-slate-900 text-white text-[11px] font-semibold py-1 px-2.5 rounded-lg whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity shadow-md z-50">
+              Inkloom AI
+            </span>
+          </button>
 
+          {/* Mobile close button */}
           <button
             onClick={onClose}
-            className="p-1 rounded-md text-slate-400 hover:text-slate-600 hover:bg-slate-100 lg:hidden"
+            className="lg:hidden p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100"
             aria-label="Close sidebar"
           >
-            <X className="w-5 h-5" />
+            <X className="w-4 h-4" />
           </button>
         </div>
 
-        {/* Workspace Context Chip */}
-        <div className="px-4 py-2.5 bg-slate-50/80 border-b border-slate-100 flex items-center justify-between text-xs">
-          <div className="flex items-center gap-2 min-w-0">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0"></span>
-            <span className="font-semibold text-slate-700 truncate">Verdanta Foods</span>
-          </div>
-          <span className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold">Demo</span>
-        </div>
+        {/* Center: Vertical Icon Navigation */}
+        <nav className="flex flex-col items-center gap-2 my-auto py-2">
+          {navItems.map((item) => {
+            const Icon = item.icon;
+            const isActive = activeTab === item.id;
+            return (
+              <button
+                key={item.id}
+                onClick={() => {
+                  setActiveTab(item.id);
+                  onClose();
+                }}
+                className={`relative w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-150 group ${
+                  isActive
+                    ? "bg-slate-100/90 text-indigo-600 shadow-[inset_0_2px_4px_rgba(0,0,0,0.04)]"
+                    : "text-slate-400 hover:text-slate-700 hover:bg-slate-50"
+                }`}
+                aria-label={item.label}
+              >
+                <Icon className={`w-5 h-5 transition-transform group-hover:scale-110 ${isActive ? "text-indigo-600 stroke-[2.2]" : "stroke-[1.8]"}`} />
 
-        {/* Primary Navigation */}
-        <div className="flex-1 overflow-y-auto px-3 py-3 space-y-6">
-          <div>
-            <div className="px-3 pb-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-              Governance
-            </div>
-            <nav className="space-y-0.5">
-              {navItems.map((item) => {
-                const Icon = item.icon;
-                const isActive = activeTab === item.id;
-                return (
-                  <button
-                    key={item.id}
-                    onClick={() => {
-                      setActiveTab(item.id);
-                      onClose();
-                    }}
-                    className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-colors ${
-                      isActive
-                        ? "bg-indigo-50 text-indigo-700 font-semibold"
-                        : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
-                    }`}
-                  >
-                    <div className="flex items-center gap-2.5">
-                      <Icon
-                        className={`w-4 h-4 ${
-                          isActive ? "text-indigo-600" : "text-slate-400 group-hover:text-slate-600"
-                        }`}
-                      />
-                      <span>{item.label}</span>
-                    </div>
-                    {item.highlight && (
-                      <span className="w-1.5 h-1.5 rounded-full bg-indigo-600"></span>
-                    )}
-                  </button>
-                );
-              })}
-            </nav>
-          </div>
+                {item.highlight && (
+                  <span className="absolute top-2.5 right-2.5 w-2 h-2 rounded-full bg-indigo-500 animate-pulse" />
+                )}
 
-          <div>
-            <div className="px-3 pb-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-              Verification
-            </div>
-            <nav className="space-y-0.5">
-              {secondaryNavItems.map((item) => {
-                const Icon = item.icon;
-                const isActive = activeTab === item.id;
-                return (
-                  <button
-                    key={item.id}
-                    onClick={() => {
-                      setActiveTab(item.id);
-                      onClose();
-                    }}
-                    className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium transition-colors ${
-                      isActive
-                        ? "bg-indigo-50 text-indigo-700 font-semibold"
-                        : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
-                    }`}
-                  >
-                    <Icon
-                      className={`w-4 h-4 ${
-                        isActive ? "text-indigo-600" : "text-slate-400 group-hover:text-slate-600"
-                      }`}
-                    />
-                    <span>{item.label}</span>
-                  </button>
-                );
-              })}
-            </nav>
-          </div>
-        </div>
+                {/* Floating Tooltip */}
+                <span className="absolute left-16 top-1/2 -translate-y-1/2 bg-slate-900 text-white text-[11px] font-medium py-1 px-2.5 rounded-lg whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity shadow-lg z-50">
+                  {item.label}
+                </span>
+              </button>
+            );
+          })}
+        </nav>
 
-        {/* System Status Indicators (Backed by real /api/health) */}
-        <div className="px-4 py-2.5 border-t border-slate-100 bg-slate-50/50 text-[11px] text-slate-500 space-y-1.5">
-          <div className="flex items-center justify-between">
-            <span className="flex items-center gap-1.5">
-              <Database className="w-3.5 h-3.5 text-slate-400" />
-              <span>PostgreSQL</span>
-            </span>
-            {healthLoading ? (
-              <span className="text-slate-400 text-[10px]">Pinging...</span>
-            ) : health?.database?.reachable ? (
-              <span className="text-emerald-600 font-medium flex items-center gap-1 text-[10px]">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                Reachable ({health.database.latencyMs ?? "<1"}ms)
-              </span>
-            ) : (
-              <span className="text-rose-600 font-medium flex items-center gap-1 text-[10px]">
-                <span className="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
-                Unreachable
-              </span>
-            )}
-          </div>
-          <div className="flex items-center justify-between text-[10px] text-slate-400 pt-0.5">
-            <span className="truncate pr-1">
-              {health?.ai?.available ? "AI-Assisted (Gemini)" : "Deterministic Rules"}
-            </span>
+        {/* Bottom: Settings / Database Health Pill Button */}
+        <div className="flex flex-col items-center gap-2">
+          <div
+            className="w-10 h-10 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200/80 flex items-center justify-center text-slate-500 hover:text-slate-700 transition-colors cursor-pointer group relative"
+            title="Database & AI Health"
+          >
+            <Database className="w-4 h-4" />
             <span
-              className={`font-semibold px-1.5 py-0.2 rounded border shrink-0 ${
-                health?.ai?.available
-                  ? "bg-indigo-50 text-indigo-700 border-indigo-200"
-                  : "bg-slate-100 text-slate-600 border-slate-200"
+              className={`absolute top-1 right-1 w-2 h-2 rounded-full ${
+                health?.database?.reachable ? "bg-emerald-500" : "bg-rose-500"
               }`}
-            >
-              {health?.ai?.available ? "Gemini Live" : "Grounded"}
-            </span>
-          </div>
-        </div>
+            />
 
-        {/* User Card */}
-        <div className="p-3 border-t border-slate-200 bg-white">
-          <div className="flex items-center gap-2.5 p-1.5 rounded-lg bg-slate-50 border border-slate-100">
-            <div className="w-7 h-7 rounded-full bg-indigo-100 text-indigo-700 font-bold flex items-center justify-center text-xs shrink-0">
-              {currentUser.name.charAt(0)}
-            </div>
-            <div className="min-w-0 flex-1">
-              <div className="text-xs font-semibold text-slate-900 truncate leading-tight">
-                {currentUser.name}
+            {/* Health Tooltip */}
+            <div className="absolute left-14 bottom-0 bg-slate-900 text-white text-[11px] p-2.5 rounded-xl whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity shadow-xl z-50 space-y-1">
+              <div className="font-semibold text-slate-200 border-b border-slate-800 pb-1">System Health</div>
+              <div className="flex items-center gap-1.5 text-[10px]">
+                <span className={`w-1.5 h-1.5 rounded-full ${health?.database?.reachable ? "bg-emerald-400" : "bg-rose-400"}`} />
+                <span>PostgreSQL: {health?.database?.reachable ? "Live Connected" : "Offline"}</span>
               </div>
-              <div className="text-[10px] text-slate-500 truncate">{currentUser.organization}</div>
+              <div className="flex items-center gap-1.5 text-[10px]">
+                <Sparkles className="w-3 h-3 text-indigo-400" />
+                <span>AI Engine: {health?.ai?.available ? "Gemini 2.5 Flash" : "Deterministic"}</span>
+              </div>
             </div>
-          </div>
-          <div className="mt-1.5 flex items-center justify-between px-1">
-            <span className={`text-[10px] font-medium px-2 py-0.5 rounded border ${badge.color}`}>
-              {badge.label}
-            </span>
-            <span className="text-[10px] text-slate-400">Demo Persona Active</span>
           </div>
         </div>
       </aside>

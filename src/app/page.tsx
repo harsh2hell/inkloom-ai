@@ -67,8 +67,8 @@ export default function Home() {
 
   if (userLoading) {
     return (
-      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6 text-slate-500">
-        <div className="w-8 h-8 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin mb-3"></div>
+      <div className="min-h-screen bg-[#e8edf4] flex flex-col items-center justify-center p-6 text-slate-500">
+        <div className="w-9 h-9 border-3 border-indigo-600 border-t-transparent rounded-full animate-spin mb-3"></div>
         <p className="text-xs font-semibold text-slate-700">Connecting to PostgreSQL & verifying auth personas...</p>
       </div>
     );
@@ -76,10 +76,10 @@ export default function Home() {
 
   if (userError || !currentUser) {
     return (
-      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6 text-slate-600">
-        <div className="max-w-md w-full bg-white p-6 rounded-xl border border-rose-200 shadow-sm text-center space-y-3">
-          <div className="w-10 h-10 rounded-full bg-rose-50 text-rose-600 flex items-center justify-center mx-auto">
-            <ShieldAlert className="w-5 h-5" />
+      <div className="min-h-screen bg-[#e8edf4] flex flex-col items-center justify-center p-6 text-slate-600">
+        <div className="max-w-md w-full bg-white p-6 rounded-3xl border border-rose-200 shadow-md text-center space-y-3">
+          <div className="w-12 h-12 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center mx-auto">
+            <ShieldAlert className="w-6 h-6" />
           </div>
           <h2 className="text-sm font-bold text-slate-900">Database Authentication Error</h2>
           <p className="text-xs text-rose-600 font-medium">{userError || "Failed to load database users"}</p>
@@ -88,7 +88,7 @@ export default function Home() {
           </p>
           <button
             onClick={fetchUsers}
-            className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-lg shadow-xs transition-colors"
+            className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-full shadow-xs transition-colors"
           >
             Retry Connection
           </button>
@@ -98,87 +98,90 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 flex">
-      {/* 1. Left Fixed Sidebar (240px desktop, drawer on mobile) */}
-      <Sidebar
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
-        currentUser={currentUser}
-        isOpen={isMobileSidebarOpen}
-        onClose={() => setIsMobileSidebarOpen(false)}
-        aiMode="AI_ASSISTED"
-      />
-
-      {/* 2. Main Workspace (fills width minus 240px sidebar) */}
-      <div className="flex-1 lg:ml-60 flex flex-col min-h-screen min-w-0">
-        {/* Top Header */}
-        <Header
+    <div className="min-h-screen bg-[#e8edf4] p-2.5 sm:p-4 lg:p-6 flex flex-col items-center justify-start text-slate-900 selection:bg-indigo-100 selection:text-indigo-900">
+      {/* Master Neo-Modern Canvas Frame (matching the rounded container in the reference design) */}
+      <div className="w-full max-w-[1640px] min-h-[92vh] bg-[#f4f7fb] rounded-[32px] sm:rounded-[36px] shadow-[0_16px_50px_rgba(15,23,42,0.06)] border border-white/80 p-3 sm:p-5 flex flex-col lg:flex-row gap-5 relative">
+        {/* 1. Left Vertical Icon Dock Rail */}
+        <Sidebar
           activeTab={activeTab}
-          onOpenSidebar={() => setIsMobileSidebarOpen(true)}
+          setActiveTab={setActiveTab}
           currentUser={currentUser}
-          availableUsers={availableUsers}
-          onSelectUser={setCurrentUser}
-          onOpenSubmitModal={() => setIsSubmitModalOpen(true)}
+          isOpen={isMobileSidebarOpen}
+          onClose={() => setIsMobileSidebarOpen(false)}
+          aiMode="AI_ASSISTED"
         />
 
-        {/* View Workspace Container */}
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto">
-          {activeTab === "overview" && (
-            <OverviewView
-              key={`overview-${refreshKey}`}
-              onOpenStudio={handleOpenStudio}
-              onOpenTab={setActiveTab}
-              onOpenSubmitModal={() => setIsSubmitModalOpen(true)}
-            />
-          )}
+        {/* 2. Main Canvas Body */}
+        <div className="flex-1 flex flex-col min-h-0 min-w-0 space-y-4">
+          {/* Top Floating Pill Header */}
+          <Header
+            activeTab={activeTab}
+            onOpenSidebar={() => setIsMobileSidebarOpen(true)}
+            currentUser={currentUser}
+            availableUsers={availableUsers}
+            onSelectUser={setCurrentUser}
+            onOpenSubmitModal={() => setIsSubmitModalOpen(true)}
+            onSelectTab={setActiveTab}
+          />
 
-          {activeTab === "knowledge" && <KnowledgeView key={`knowledge-${refreshKey}`} />}
+          {/* Active Workspace View */}
+          <main className="flex-1 w-full min-h-0 overflow-y-auto">
+            {activeTab === "overview" && (
+              <OverviewView
+                key={`overview-${refreshKey}`}
+                onOpenStudio={handleOpenStudio}
+                onOpenTab={setActiveTab}
+                onOpenSubmitModal={() => setIsSubmitModalOpen(true)}
+                currentUser={currentUser}
+              />
+            )}
 
-          {activeTab === "content" && (
-            <ContentListView
-              key={`content-${refreshKey}`}
-              onOpenStudio={handleOpenStudio}
-              onOpenSubmitModal={() => setIsSubmitModalOpen(true)}
-            />
-          )}
+            {activeTab === "knowledge" && <KnowledgeView key={`knowledge-${refreshKey}`} />}
 
-          {activeTab === "studio" && (
-            <CorrectionStudioView
-              key={`studio-${studioContentId}-${refreshKey}-${currentUser.id}`}
-              contentId={studioContentId}
-              currentUser={currentUser}
-              onOpenBriefsTab={() => setActiveTab("briefs")}
-              onRefreshList={() => setRefreshKey((k) => k + 1)}
-            />
-          )}
+            {activeTab === "content" && (
+              <ContentListView
+                key={`content-${refreshKey}`}
+                onOpenStudio={handleOpenStudio}
+                onOpenSubmitModal={() => setIsSubmitModalOpen(true)}
+              />
+            )}
 
-          {activeTab === "briefs" && (
-            <CreatorBriefsView key={`briefs-${refreshKey}-${currentUser.id}`} currentUser={currentUser} />
-          )}
+            {activeTab === "studio" && (
+              <CorrectionStudioView
+                key={`studio-${studioContentId}-${refreshKey}-${currentUser.id}`}
+                contentId={studioContentId}
+                currentUser={currentUser}
+                onOpenBriefsTab={() => setActiveTab("briefs")}
+                onRefreshList={() => setRefreshKey((k) => k + 1)}
+              />
+            )}
 
-          {activeTab === "audit" && <AuditLogView key={`audit-${refreshKey}`} />}
+            {activeTab === "briefs" && (
+              <CreatorBriefsView key={`briefs-${refreshKey}-${currentUser.id}`} currentUser={currentUser} />
+            )}
 
-          {activeTab === "guide" && (
-            <JudgeGuideView
-              onOpenSubmitModal={() => setIsSubmitModalOpen(true)}
-              onOpenTab={setActiveTab}
-            />
-          )}
-        </main>
+            {activeTab === "audit" && <AuditLogView key={`audit-${refreshKey}`} />}
 
-        {/* Minimal Footer */}
-        <footer className="border-t border-slate-200/80 bg-white py-4 px-6 text-xs text-slate-500">
-          <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
-            <div className="flex items-center gap-2">
-              <span className="font-semibold text-slate-800">Inkloom AI</span>
-              <span>—</span>
+            {activeTab === "guide" && (
+              <JudgeGuideView
+                onOpenSubmitModal={() => setIsSubmitModalOpen(true)}
+                onOpenTab={setActiveTab}
+              />
+            )}
+          </main>
+
+          {/* Minimal Subtle Brand Tagline */}
+          <footer className="pt-2 pb-1 px-3 text-[11px] text-slate-400 flex flex-col sm:flex-row items-center justify-between gap-1 border-t border-slate-200/50">
+            <div className="flex items-center gap-1.5 font-medium">
+              <span className="text-slate-600 font-semibold">Inkloom AI</span>
+              <span>•</span>
               <span>Content Governance & Claims Verification</span>
             </div>
-            <div className="text-[11px] text-slate-400">
-              CodeAxis Round 2 &bull; Team ERROR 404 &bull; Verdanta Foods Demo
+            <div className="text-[10px] text-slate-400">
+              Verdanta Foods Demo &bull; CodeAxis Round 2
             </div>
-          </div>
-        </footer>
+          </footer>
+        </div>
       </div>
 
       {/* Global Submission Modal */}

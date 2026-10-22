@@ -9,6 +9,7 @@ export interface UserProfile {
   email: string;
   role: "BRAND_ADMIN" | "AGENCY_CREATOR" | "EXTERNAL_CREATOR" | "AUDITOR";
   organization: string;
+  avatarUrl?: string | null;
 }
 
 interface NavbarProps {

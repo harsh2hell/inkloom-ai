@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f8fafc;
+  --background: #e8edf4;
   --foreground: #0f172a;
   --brand-primary: #4f46e5;
   --brand-primary-hover: #4338ca;
@@ -24,8 +24,8 @@ body {
 
 /* Custom scrollbar */
 ::-webkit-scrollbar {
-  width: 5px;
-  height: 5px;
+  width: 6px;
+  height: 6px;
 }
 ::-webkit-scrollbar-track {
   background: transparent;
@@ -38,24 +38,106 @@ body {
   background: #94a3b8;
 }
 
-/* Standardized Card Styles */
+/* Neo-modern Soft SaaS Clay Cards */
+.clay-card {
+  background: #ffffff;
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  border-radius: 1.75rem; /* 28px */
+  box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.03), 0 2px 6px -1px rgba(15, 23, 42, 0.02);
+}
+
+.clay-card-interactive {
+  background: #ffffff;
+  border: 1px solid rgba(226, 232, 240, 0.85);
+  border-radius: 1.75rem;
+  box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.03), 0 2px 6px -1px rgba(15, 23, 42, 0.02);
+  transition: all 180ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+.clay-card-interactive:hover {
+  border-color: rgba(203, 213, 225, 1);
+  box-shadow: 0 10px 25px -4px rgba(15, 23, 42, 0.06), 0 4px 10px -2px rgba(15, 23, 42, 0.04);
+  transform: translateY(-1px);
+}
+
+/* Legacy saas-card support */
 .saas-card {
   background: #ffffff;
-  border: 1px solid #e2e8f0;
-  border-radius: 0.75rem;
-  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.03);
+  border: 1px solid rgba(226, 232, 240, 0.85);
+  border-radius: 1.5rem;
+  box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.03);
 }
 
 .saas-card-interactive {
   background: #ffffff;
-  border: 1px solid #e2e8f0;
-  border-radius: 0.75rem;
-  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.03);
+  border: 1px solid rgba(226, 232, 240, 0.85);
+  border-radius: 1.5rem;
+  box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.03);
   transition: all 150ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 .saas-card-interactive:hover {
   border-color: #cbd5e1;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 8px 24px -4px rgba(15, 23, 42, 0.06);
+}
+
+/* Glowing Floating Pills (matching reference image) */
+.pill-glow-purple {
+  background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%);
+  color: #ffffff;
+  box-shadow: 0 6px 18px rgba(124, 58, 237, 0.35);
+  border-radius: 1rem;
+}
+
+.pill-glow-emerald {
+  background: linear-gradient(135deg, #10b981 0%, #14b8a6 100%);
+  color: #ffffff;
+  box-shadow: 0 6px 18px rgba(16, 185, 129, 0.35);
+  border-radius: 1rem;
+}
+
+.pill-frosted-sky {
+  background: rgba(224, 242, 254, 0.65);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(186, 230, 253, 0.9);
+  color: #0369a1;
+  box-shadow: 0 4px 16px rgba(3, 105, 161, 0.12);
+  border-radius: 1rem;
+}
+
+/* Hatched Diagonal Pattern for calendar/timeline slots */
+.pattern-hatch-subtle {
+  background-image: repeating-linear-gradient(
+    45deg,
+    rgba(203, 213, 225, 0.35) 0,
+    rgba(203, 213, 225, 0.35) 1.5px,
+    transparent 1.5px,
+    transparent 6px
+  );
+}
+
+/* 3D Glass / Soft Sphere Orb */
+.sphere-3d-orb {
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #bfdbfe 0%, #60a5fa 45%, #2563eb 85%, #1d4ed8 100%);
+  box-shadow:
+    inset -4px -4px 10px rgba(15, 23, 42, 0.35),
+    inset 4px 4px 8px rgba(255, 255, 255, 0.8),
+    0 10px 24px -2px rgba(37, 99, 235, 0.35);
+  position: relative;
+}
+
+.sphere-3d-orb::after {
+  content: "";
+  position: absolute;
+  top: 12%;
+  left: 22%;
+  width: 28%;
+  height: 20%;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0) 80%);
+  transform: rotate(-30deg);
 }
 
 /* Diff highlights for Correction Studio */
@@ -64,7 +146,7 @@ body {
   color: #991b1b;
   text-decoration: line-through;
   padding: 0.125rem 0.25rem;
-  border-radius: 0.25rem;
+  border-radius: 0.375rem;
   font-weight: 500;
 }
 
@@ -73,5 +155,5 @@ body {
   color: #166534;
   font-weight: 500;
   padding: 0.125rem 0.25rem;
-  border-radius: 0.25rem;
+  border-radius: 0.375rem;
 }

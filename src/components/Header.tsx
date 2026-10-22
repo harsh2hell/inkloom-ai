@@ -1,13 +1,19 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import {
   Menu,
   Plus,
-  UserCheck,
-  ChevronDown,
+  Search,
+  Bell,
+  LayoutDashboard,
+  FileCheck2,
+  History,
   Shield,
-  Layers,
+  BookOpen,
+  SlidersHorizontal,
+  FileText,
+  Compass,
 } from "lucide-react";
 import { UserProfile } from "./Navbar";
 
@@ -18,6 +24,7 @@ interface HeaderProps {
   availableUsers: UserProfile[];
   onSelectUser: (user: UserProfile) => void;
   onOpenSubmitModal: () => void;
+  onSelectTab?: (tab: string) => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -27,88 +34,188 @@ export const Header: React.FC<HeaderProps> = ({
   availableUsers,
   onSelectUser,
   onOpenSubmitModal,
+  onSelectTab,
 }) => {
-  const getTabTitle = (tab: string) => {
-    switch (tab) {
-      case "overview":
-        return { title: "Governance Overview", category: "Dashboard" };
-      case "knowledge":
-        return { title: "Brand Knowledge Centre", category: "Source of Truth" };
-      case "content":
-        return { title: "Content Reviews & Pipeline", category: "Verification" };
-      case "studio":
-        return { title: "Correction Studio", category: "Evidence Workspace" };
-      case "briefs":
-        return { title: "Creator Briefs & Drift", category: "Governance" };
-      case "audit":
-        return { title: "Audit Log & History", category: "Compliance Trail" };
-      case "guide":
-        return { title: "Judge Demo Script", category: "Evaluation Guide" };
+  const [searchQuery, setSearchQuery] = useState("");
+  const [showSearchInput, setShowSearchInput] = useState(false);
+
+  const pillTabs = [
+    { id: "overview", label: "Dashboard", icon: LayoutDashboard },
+    { id: "content", label: "Reviews", icon: FileCheck2 },
+    { id: "audit", label: "Audit Logs", icon: History },
+  ];
+
+  const getInitials = (name: string) => {
+    return name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2);
+  };
+
+  const getRoleShort = (role: string) => {
+    switch (role) {
+      case "BRAND_ADMIN":
+        return "Brand Admin";
+      case "AGENCY_CREATOR":
+        return "Agency Creator";
+      case "EXTERNAL_CREATOR":
+        return "Creator";
+      case "AUDITOR":
+        return "Auditor";
       default:
-        return { title: "Overview", category: "Workspace" };
+        return role;
     }
   };
 
-  const { title, category } = getTabTitle(activeTab);
-
   return (
-    <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-slate-200/90 h-14 px-4 sm:px-6 flex items-center justify-between gap-4">
-      {/* Left: Mobile Menu Trigger + Breadcrumb */}
-      <div className="flex items-center gap-3 min-w-0">
+    <header className="w-full flex flex-col md:flex-row items-center justify-between gap-4 py-1 px-1">
+      {/* Left: Mobile Menu Button + Neo-Modern Pill Navigation Bar */}
+      <div className="flex items-center gap-2.5 w-full md:w-auto">
         <button
           onClick={onOpenSidebar}
-          className="p-1.5 -ml-1.5 rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-100 lg:hidden"
-          aria-label="Open navigation sidebar"
+          className="lg:hidden p-2 rounded-2xl bg-white border border-slate-200/80 text-slate-600 hover:text-slate-900 shadow-xs"
+          aria-label="Open dock menu"
         >
           <Menu className="w-5 h-5" />
         </button>
 
-        <div className="flex items-center gap-2 text-xs truncate">
-          <span className="text-slate-400 font-medium hidden sm:inline">{category}</span>
-          <span className="text-slate-300 hidden sm:inline">/</span>
-          <h1 className="font-semibold text-slate-900 text-sm truncate">{title}</h1>
+        {/* Pill Navigation Bar (matching reference top bar) */}
+        <div className="flex items-center bg-white/90 backdrop-blur-md rounded-full p-1.5 border border-slate-200/80 shadow-[0_2px_12px_rgba(15,23,42,0.03)] gap-1 overflow-x-auto max-w-full">
+          {pillTabs.map((tab) => {
+            const Icon = tab.icon;
+            const isActive = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => onSelectTab && onSelectTab(tab.id)}
+                className={`flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all duration-150 whitespace-nowrap ${
+                  isActive
+                    ? "bg-slate-100 text-slate-900 shadow-xs"
+                    : "text-slate-500 hover:text-slate-800 hover:bg-slate-50"
+                }`}
+              >
+                <Icon className={`w-3.5 h-3.5 ${isActive ? "text-indigo-600" : "text-slate-400"}`} />
+                <span>{tab.label}</span>
+              </button>
+            );
+          })}
+
+          {/* Search Pill Button */}
+          {showSearchInput ? (
+            <div className="flex items-center px-2 py-0.5 bg-slate-50 rounded-full border border-slate-200 ml-1">
+              <Search className="w-3.5 h-3.5 text-slate-400 mr-1.5" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search claims & reviews..."
+                className="text-xs bg-transparent outline-none w-36 text-slate-800 placeholder-slate-400 py-0.5"
+                autoFocus
+                onBlur={() => !searchQuery && setShowSearchInput(false)}
+              />
+            </div>
+          ) : (
+            <button
+              onClick={() => setShowSearchInput(true)}
+              className="p-1.5 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-50 transition-colors ml-1"
+              aria-label="Search"
+              title="Search claims & reviews"
+            >
+              <Search className="w-4 h-4" />
+            </button>
+          )}
         </div>
       </div>
 
-      {/* Right: Workspace Tag, Persona Switcher & Primary CTA */}
-      <div className="flex items-center gap-2.5 sm:gap-3 shrink-0">
-        {/* Workspace Tag (Hidden on mobile) */}
-        <div className="hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-50 border border-slate-200/80 text-[11px] text-slate-600 font-medium">
-          <Shield className="w-3.5 h-3.5 text-indigo-600" />
-          <span>Verdanta Foods</span>
-        </div>
-
-        {/* Persona Selector (Visibly labelled Demo Role Switcher) */}
-        <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200/90 rounded-lg px-2.5 py-1">
-          <span className="text-[10px] uppercase tracking-wider text-indigo-700 font-bold bg-indigo-50/80 px-1.5 py-0.5 rounded border border-indigo-200/60 hidden sm:inline">
-            Demo Persona:
+      {/* Right: Team Avatars Stack + Submit Content CTA + Active Profile Pill */}
+      <div className="flex items-center gap-3 w-full md:w-auto justify-end">
+        {/* Real Team Persona Avatars Stack (interactive role switch) */}
+        <div className="hidden sm:flex items-center bg-white/90 backdrop-blur-md px-2 py-1 rounded-full border border-slate-200/80 shadow-[0_2px_12px_rgba(15,23,42,0.03)] gap-1">
+          <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider px-1.5">
+            Team:
           </span>
-          <select
-            value={currentUser.id}
-            onChange={(e) => {
-              const selected = availableUsers.find((u) => u.id === e.target.value);
-              if (selected) onSelectUser(selected);
-            }}
-            className="text-xs font-semibold text-slate-800 bg-transparent border-0 outline-none cursor-pointer focus:ring-0 pr-1 py-0.5"
-            aria-label="Switch demo persona for testing role-based access"
-          >
-            {availableUsers.map((user) => (
-              <option key={user.id} value={user.id}>
-                {user.name} ({user.role === "BRAND_ADMIN" ? "Brand Admin" : user.role === "AGENCY_CREATOR" ? "Agency Creator" : user.role === "EXTERNAL_CREATOR" ? "External Creator" : "Auditor"})
-              </option>
-            ))}
-          </select>
+          <div className="flex -space-x-2 items-center">
+            {availableUsers.map((user) => {
+              const isSelected = user.id === currentUser.id;
+              return (
+                <button
+                  key={user.id}
+                  onClick={() => onSelectUser(user)}
+                  className={`relative group rounded-full transition-transform hover:scale-110 hover:z-20 ${
+                    isSelected ? "ring-2 ring-indigo-600 z-10" : ""
+                  }`}
+                  title={`${user.name} (${getRoleShort(user.role)}) — Click to switch persona`}
+                >
+                  {user.avatarUrl ? (
+                    <img
+                      src={user.avatarUrl}
+                      alt={user.name}
+                      className="w-7 h-7 rounded-full object-cover border-2 border-white"
+                    />
+                  ) : (
+                    <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-slate-200 to-indigo-100 text-indigo-700 font-bold text-[10px] flex items-center justify-center border-2 border-white">
+                      {getInitials(user.name)}
+                    </div>
+                  )}
+
+                  {/* Tooltip */}
+                  <div className="absolute bottom-full mb-1.5 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-[10px] py-1 px-2 rounded-lg whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity shadow-md z-30">
+                    <div className="font-semibold">{user.name}</div>
+                    <div className="text-slate-300 text-[9px]">{getRoleShort(user.role)}</div>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
         </div>
 
-        {/* Primary CTA */}
+        {/* Action Button: + Submit Content (smooth pill) */}
         <button
           onClick={onOpenSubmitModal}
-          className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-lg shadow-xs transition-colors shrink-0"
+          className="flex items-center gap-1.5 bg-white hover:bg-slate-50 text-slate-800 border border-slate-200/90 hover:border-slate-300 px-4 py-2 rounded-full text-xs font-semibold shadow-[0_2px_8px_rgba(0,0,0,0.03)] transition-all hover:shadow-xs active:scale-95 shrink-0"
         >
-          <Plus className="w-4 h-4" />
-          <span className="hidden xs:inline">Submit Content</span>
-          <span className="xs:hidden">Submit</span>
+          <Plus className="w-4 h-4 text-indigo-600" />
+          <span>Add Content</span>
         </button>
+
+        {/* Active User Avatar & Bell Pill */}
+        <div className="flex items-center gap-2 bg-white/90 backdrop-blur-md p-1 pl-1.5 pr-2 rounded-full border border-slate-200/80 shadow-[0_2px_12px_rgba(15,23,42,0.03)]">
+          <div className="relative">
+            {currentUser.avatarUrl ? (
+              <img
+                src={currentUser.avatarUrl}
+                alt={currentUser.name}
+                className="w-8 h-8 rounded-full object-cover border border-slate-200"
+              />
+            ) : (
+              <div className="w-8 h-8 rounded-full bg-indigo-100 text-indigo-700 font-bold text-xs flex items-center justify-center border border-indigo-200">
+                {getInitials(currentUser.name)}
+              </div>
+            )}
+            <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-white" />
+          </div>
+
+          <div className="hidden lg:block text-left mr-1">
+            <div className="text-xs font-bold text-slate-900 leading-tight truncate max-w-[110px]">
+              {currentUser.name}
+            </div>
+            <div className="text-[10px] text-slate-400 font-medium leading-none">
+              {getRoleShort(currentUser.role)}
+            </div>
+          </div>
+
+          {/* Bell Notification Button */}
+          <button
+            className="w-8 h-8 rounded-full bg-slate-50 hover:bg-slate-100 text-slate-500 hover:text-slate-800 flex items-center justify-center transition-colors relative"
+            title="Notifications"
+            aria-label="View notifications"
+          >
+            <Bell className="w-4 h-4" />
+            <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-indigo-600" />
+          </button>
+        </div>
       </div>
     </header>
   );

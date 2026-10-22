@@ -123,14 +123,14 @@ export const KnowledgeView: React.FC = () => {
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-slate-200/80">
         <div>
-          <h2 className="text-xl font-bold text-slate-900 tracking-tight">Brand Knowledge Centre</h2>
+          <h2 className="text-2xl font-bold text-slate-900 tracking-tight">Brand Knowledge Centre</h2>
           <p className="text-xs text-slate-500 mt-0.5">
             Single source of truth for Verdanta Foods: approved facts, permitted claims, prohibited terms, and mandatory disclosures.
           </p>
         </div>
         <button
           onClick={() => setShowAddModal(true)}
-          className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-lg shadow-2xs transition-colors shrink-0"
+          className="flex items-center gap-1.5 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-full shadow-xs transition-colors shrink-0"
         >
           <Plus className="w-4 h-4" />
           <span>Add Knowledge Item</span>
@@ -151,10 +151,10 @@ export const KnowledgeView: React.FC = () => {
             <button
               key={cat.id}
               onClick={() => setSelectedCategory(cat.id)}
-              className={`px-3 py-1.5 rounded-lg font-medium transition-colors ${
+              className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-colors ${
                 selectedCategory === cat.id
-                  ? "bg-slate-900 text-white shadow-2xs"
-                  : "bg-white text-slate-600 hover:bg-slate-50 border border-slate-200"
+                  ? "bg-slate-900 text-white shadow-xs"
+                  : "bg-white text-slate-600 hover:bg-slate-50 border border-slate-200/80"
               }`}
             >
               {cat.label}
@@ -163,14 +163,14 @@ export const KnowledgeView: React.FC = () => {
         </div>
 
         {/* Search Input */}
-        <div className="relative min-w-[220px]">
-          <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+        <div className="relative min-w-[240px]">
+          <Search className="w-3.5 h-3.5 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search truth items..."
-            className="w-full pl-8 pr-3 py-1.5 text-xs bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
+            className="w-full pl-9 pr-3.5 py-1.5 text-xs bg-white border border-slate-200/80 rounded-full focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 shadow-2xs"
           />
         </div>
       </div>
@@ -179,21 +179,21 @@ export const KnowledgeView: React.FC = () => {
       {loading ? (
         <div className="py-20 text-center text-xs text-slate-400">Loading Knowledge Items...</div>
       ) : error ? (
-        <div className="py-16 text-center text-xs saas-card max-w-md mx-auto p-6 space-y-3">
-          <div className="w-10 h-10 rounded-full bg-rose-50 text-rose-600 flex items-center justify-center mx-auto">
-            <AlertCircle className="w-5 h-5" />
+        <div className="py-16 text-center text-xs clay-card max-w-md mx-auto p-6 space-y-3">
+          <div className="w-12 h-12 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center mx-auto">
+            <AlertCircle className="w-6 h-6" />
           </div>
           <h3 className="text-sm font-bold text-slate-900">Failed to Retrieve Knowledge Base</h3>
           <p className="text-xs text-rose-600">{error}</p>
           <button
             onClick={fetchItems}
-            className="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg shadow-2xs"
+            className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-full shadow-xs"
           >
             Retry
           </button>
         </div>
       ) : filteredItems.length === 0 ? (
-        <div className="py-16 text-center text-xs text-slate-500 saas-card">
+        <div className="py-16 text-center text-xs text-slate-500 clay-card">
           No knowledge items match the search query or filter.
         </div>
       ) : (
@@ -207,22 +207,22 @@ export const KnowledgeView: React.FC = () => {
             return (
               <div
                 key={item.id}
-                className={`saas-card p-4 flex flex-col justify-between transition-all ${
+                className={`clay-card p-5 flex flex-col justify-between transition-all ${
                   isExpired ? "border-amber-300/80 bg-amber-50/15" : "hover:border-slate-300"
                 }`}
               >
                 <div>
                   {/* Card Header */}
-                  <div className="flex items-start justify-between gap-2 mb-2">
-                    <span className="font-mono text-[11px] font-semibold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">
+                  <div className="flex items-start justify-between gap-2 mb-2.5">
+                    <span className="font-mono text-[11px] font-bold text-slate-600 bg-slate-100 px-2.5 py-0.5 rounded-full">
                       {item.id}
                     </span>
                     <div className="flex items-center gap-1.5 flex-wrap justify-end">
-                      <span className={`text-[10px] font-semibold px-2 py-0.5 rounded border ${badge.color}`}>
+                      <span className={`text-[10px] font-semibold px-2.5 py-0.5 rounded-full border ${badge.color}`}>
                         {badge.label}
                       </span>
                       {isExpired && (
-                        <span className="text-[10px] font-semibold px-2 py-0.5 rounded border bg-amber-50 text-amber-700 border-amber-300">
+                        <span className="text-[10px] font-semibold px-2.5 py-0.5 rounded-full border bg-amber-50 text-amber-700 border-amber-300">
                           Expired {formattedExpiry}
                         </span>
                       )}
@@ -230,12 +230,12 @@ export const KnowledgeView: React.FC = () => {
                   </div>
 
                   {/* Title & Content */}
-                  <h3 className="text-xs font-bold text-slate-900 leading-snug mb-1.5">{item.title}</h3>
+                  <h3 className="text-sm font-bold text-slate-900 leading-snug mb-1.5">{item.title}</h3>
                   <p className="text-xs text-slate-600 leading-relaxed mb-3">{item.content}</p>
                 </div>
 
                 {/* Evidence & Source Footer */}
-                <div className="pt-2.5 border-t border-slate-100 space-y-1.5 text-[11px] text-slate-500">
+                <div className="pt-3 border-t border-slate-100 space-y-2 text-[11px] text-slate-500">
                   <div className="flex items-center justify-between text-slate-400 text-[10px]">
                     <span className="truncate max-w-[150px]">Owner: {item.owner}</span>
                     <span>
@@ -246,13 +246,13 @@ export const KnowledgeView: React.FC = () => {
                   </div>
 
                   {item.sourceDocument && (
-                    <div className="p-2 rounded bg-slate-50 border border-slate-100 text-[11px]">
-                      <div className="font-semibold text-slate-700 text-[10px] mb-0.5 flex items-center justify-between">
+                    <div className="p-2.5 rounded-2xl bg-slate-50/80 border border-slate-100 text-[11px]">
+                      <div className="font-semibold text-slate-700 text-[10px] mb-1 flex items-center justify-between">
                         <span>Source: {item.sourceDocument}</span>
                         {isExpired ? (
-                          <span className="text-amber-600 font-bold text-[9px]">EXPIRED</span>
+                          <span className="text-amber-600 font-bold text-[9px] bg-amber-100/60 px-1.5 py-0.2 rounded">EXPIRED</span>
                         ) : (
-                          <span className="text-emerald-600 font-bold text-[9px]">ACTIVE</span>
+                          <span className="text-emerald-600 font-bold text-[9px] bg-emerald-100/60 px-1.5 py-0.2 rounded">ACTIVE</span>
                         )}
                       </div>
                       {item.sourceExcerpt && (
@@ -272,12 +272,12 @@ export const KnowledgeView: React.FC = () => {
       {/* Add Knowledge Item Modal */}
       {showAddModal && (
         <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl border border-slate-200 shadow-xl max-w-lg w-full p-5 text-xs animate-in zoom-in-95 duration-150">
+          <div className="bg-white rounded-3xl border border-slate-200 shadow-xl max-w-lg w-full p-6 text-xs animate-in zoom-in-95 duration-150">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <h3 className="text-sm font-bold text-slate-900">Add Brand Knowledge Item</h3>
+              <h3 className="text-base font-bold text-slate-900">Add Brand Knowledge Item</h3>
               <button
                 onClick={() => setShowAddModal(false)}
-                className="text-slate-400 hover:text-slate-600"
+                className="text-slate-400 hover:text-slate-600 p-1 rounded-full hover:bg-slate-100"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -292,7 +292,7 @@ export const KnowledgeView: React.FC = () => {
                   value={newTitle}
                   onChange={(e) => setNewTitle(e.target.value)}
                   placeholder="e.g., Protein Concentration Specification"
-                  className="w-full px-3 py-1.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                  className="w-full px-3.5 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
                 />
               </div>
 
@@ -301,7 +301,7 @@ export const KnowledgeView: React.FC = () => {
                 <select
                   value={newCategory}
                   onChange={(e) => setNewCategory(e.target.value)}
-                  className="w-full px-3 py-1.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                  className="w-full px-3.5 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
                 >
                   <option value="PRODUCT_FACT">Product Fact</option>
                   <option value="PERMITTED_CLAIM">Permitted Claim</option>
@@ -319,7 +319,7 @@ export const KnowledgeView: React.FC = () => {
                   value={newContent}
                   onChange={(e) => setNewContent(e.target.value)}
                   placeholder="Exact factual statement, permitted phrase, or prohibited wording..."
-                  className="w-full px-3 py-1.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                  className="w-full px-3.5 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
                 />
               </div>
 
@@ -330,7 +330,7 @@ export const KnowledgeView: React.FC = () => {
                   value={newSourceDoc}
                   onChange={(e) => setNewSourceDoc(e.target.value)}
                   placeholder="e.g., Certificate of Analysis 2026-QA-1092"
-                  className="w-full px-3 py-1.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                  className="w-full px-3.5 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
                 />
               </div>
 
@@ -341,7 +341,7 @@ export const KnowledgeView: React.FC = () => {
                   value={newSourceExcerpt}
                   onChange={(e) => setNewSourceExcerpt(e.target.value)}
                   placeholder="Exact quote from source doc used for application-side citation validation..."
-                  className="w-full px-3 py-1.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                  className="w-full px-3.5 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
                 />
               </div>
 
@@ -349,13 +349,13 @@ export const KnowledgeView: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setShowAddModal(false)}
-                  className="px-3 py-1.5 text-slate-600 hover:bg-slate-50 border border-slate-200 rounded-lg font-medium"
+                  className="px-4 py-2 text-slate-600 hover:bg-slate-50 border border-slate-200 rounded-full font-semibold"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg shadow-2xs"
+                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-full shadow-xs"
                 >
                   Save Truth Item
                 </button>
