@@ -70,9 +70,31 @@ describe("Inkloom AI — Zero Mock Data Enforcement Sprint Verification", () => 
       (item) => item.versions[0]?.analysisRuns[0]?.findings || []
     );
 
-    // Active findings from the latest runs must not mix in historical findings from older superseded versions
-    expect(activeFindings.length).toBeLessThanOrEqual(totalLifetimeFindings);
-    expect(activeFindings.length).toBe(15);
+    // Verify items that have more than 1 version have superseded findings that are excluded
+    const multiVersionItems = await prisma.contentItem.findMany({
+      where: { versions: { some: { versionNumber: { gt: 1 } } } },
+      include: {
+        versions: {
+          orderBy: { versionNumber: "desc" },
+          include: { analysisRuns: { include: { findings: true } } },
+        },
+      },
+    });
+
+    expect(multiVersionItems.length).toBeGreaterThan(0);
+    const sampleMultiVer = multiVersionItems[0];
+    const olderVerFindings = sampleMultiVer.versions
+      .slice(1)
+      .flatMap((v) => v.analysisRuns.flatMap((r) => r.findings));
+
+    // Older version finding IDs must NEVER be present in activeFindings
+    const activeFindingIds = new Set(activeFindings.map((f) => f.id));
+    for (const oldFinding of olderVerFindings) {
+      expect(activeFindingIds.has(oldFinding.id)).toBe(false);
+    }
+
+    // Active findings must be strictly less than total lifetime findings
+    expect(activeFindings.length).toBeLessThan(totalLifetimeFindings);
     expect(totalLifetimeFindings).toBeGreaterThanOrEqual(30);
   });
 
