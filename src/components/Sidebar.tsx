@@ -14,6 +14,7 @@ import {
   Database,
   Settings,
   Sparkles,
+  Plus,
 } from "lucide-react";
 import { UserProfile } from "./Navbar";
 
@@ -54,6 +55,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   const navItems = [
     { id: "overview", label: "Dashboard Overview", icon: LayoutDashboard },
+    { id: "submit", label: "Submit Content", icon: Plus },
     { id: "content", label: "Content Reviews & Pipeline", icon: FileCheck2 },
     { id: "studio", label: "Correction Studio", icon: SlidersHorizontal, highlight: true },
     { id: "knowledge", label: "Brand Knowledge Centre", icon: BookOpen },

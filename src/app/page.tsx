@@ -12,6 +12,7 @@ import { CorrectionStudioView } from "@/components/views/CorrectionStudioView";
 import { CreatorBriefsView } from "@/components/views/CreatorBriefsView";
 import { AuditLogView } from "@/components/views/AuditLogView";
 import { JudgeGuideView } from "@/components/views/JudgeGuideView";
+import { SubmitContentView } from "@/components/views/SubmitContentView";
 
 import { ShieldAlert } from "lucide-react";
 
@@ -120,7 +121,7 @@ export default function Home() {
             currentUser={currentUser}
             availableUsers={availableUsers}
             onSelectUser={setCurrentUser}
-            onOpenSubmitModal={() => setIsSubmitModalOpen(true)}
+            onOpenSubmitModal={() => setActiveTab("submit")}
             onSelectTab={setActiveTab}
           />
 
@@ -131,8 +132,17 @@ export default function Home() {
                 key={`overview-${refreshKey}`}
                 onOpenStudio={handleOpenStudio}
                 onOpenTab={setActiveTab}
-                onOpenSubmitModal={() => setIsSubmitModalOpen(true)}
+                onOpenSubmitModal={() => setActiveTab("submit")}
                 currentUser={currentUser}
+              />
+            )}
+
+            {activeTab === "submit" && (
+              <SubmitContentView
+                key={`submit-${refreshKey}-${currentUser.id}`}
+                currentUser={currentUser}
+                onSubmitSuccess={handleSubmitSuccess}
+                onOpenTab={setActiveTab}
               />
             )}
 
@@ -142,7 +152,7 @@ export default function Home() {
               <ContentListView
                 key={`content-${refreshKey}`}
                 onOpenStudio={handleOpenStudio}
-                onOpenSubmitModal={() => setIsSubmitModalOpen(true)}
+                onOpenSubmitModal={() => setActiveTab("submit")}
               />
             )}
 
@@ -164,7 +174,7 @@ export default function Home() {
 
             {activeTab === "guide" && (
               <JudgeGuideView
-                onOpenSubmitModal={() => setIsSubmitModalOpen(true)}
+                onOpenSubmitModal={() => setActiveTab("submit")}
                 onOpenTab={setActiveTab}
               />
             )}

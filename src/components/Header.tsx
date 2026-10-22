@@ -83,13 +83,31 @@ export const Header: React.FC<HeaderProps> = ({
           <span>IL</span>
         </div>
 
-        {/* Two-line Title: Governance / Dashboard */}
+        {/* Two-line Title: Reflects active page dynamically */}
         <div
           onClick={() => onSelectTab && onSelectTab("overview")}
           className="cursor-pointer select-none"
         >
-          <div className="text-xs font-bold text-slate-900 leading-tight">Governance</div>
-          <div className="text-[11px] font-medium text-slate-400 leading-none">Dashboard</div>
+          <div className="text-xs font-bold text-slate-900 leading-tight">
+            {activeTab === "overview" && "Governance"}
+            {activeTab === "submit" && "Submit Content"}
+            {activeTab === "content" && "Content Reviews"}
+            {activeTab === "studio" && "Correction Studio"}
+            {activeTab === "knowledge" && "Knowledge Centre"}
+            {activeTab === "briefs" && "Creator Briefs"}
+            {activeTab === "audit" && "Audit Ledger"}
+            {activeTab === "guide" && "Judge Guide"}
+          </div>
+          <div className="text-[11px] font-medium text-slate-400 leading-none">
+            {activeTab === "overview" && "Dashboard"}
+            {activeTab === "submit" && "Draft Verification"}
+            {activeTab === "content" && "Pipeline & Audit"}
+            {activeTab === "studio" && "Evidence Workspace"}
+            {activeTab === "knowledge" && "Source of Truth"}
+            {activeTab === "briefs" && "Drift Scorecard"}
+            {activeTab === "audit" && "Compliance Trail"}
+            {activeTab === "guide" && "Evaluation Script"}
+          </div>
         </div>
       </div>
 

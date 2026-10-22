@@ -204,8 +204,8 @@ export const CreatorBriefsView: React.FC<CreatorBriefsProps> = ({ currentUser })
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
           {/* Left Column: Brief Selection List (4 Cols) */}
-          <div className="lg:col-span-4 saas-card p-3 space-y-2">
-            <div className="px-2 py-1 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+          <div className="lg:col-span-4 clay-card p-5 space-y-3">
+            <div className="px-1 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
               Available Briefs ({briefs.length})
             </div>
             <div className="space-y-1.5">
@@ -243,7 +243,7 @@ export const CreatorBriefsView: React.FC<CreatorBriefsProps> = ({ currentUser })
             {selectedBrief && (
               <>
                 {/* Brief Document Container */}
-                <div className="saas-card p-5 space-y-4">
+                <div className="clay-card p-6 sm:p-7 space-y-4">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-100">
                     <div>
                       <div className="flex items-center gap-2 mb-1">
@@ -337,7 +337,7 @@ export const CreatorBriefsView: React.FC<CreatorBriefsProps> = ({ currentUser })
                 </div>
 
                 {/* Creator Final Adaptation Drift Check */}
-                <div className="saas-card p-5 space-y-4">
+                <div className="clay-card p-6 sm:p-7 space-y-4">
                   <div className="flex items-center justify-between pb-2 border-b border-slate-100">
                     <div>
                       <h4 className="text-xs font-bold text-slate-900">
