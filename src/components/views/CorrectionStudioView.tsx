@@ -646,7 +646,7 @@ export const CorrectionStudioView: React.FC<CorrectionStudioProps> = ({
 
               <button
                 onClick={handleReRunVerification}
-                disabled={isVerifying || editedText === activeVersion.textContent}
+                disabled={isVerifying}
                 className="btn-coral w-full flex items-center justify-center gap-2 py-3 rounded-2xl text-xs font-bold shadow-[0_8px_20px_rgba(224,86,56,0.3)] hover:scale-[1.01] active:scale-[0.99] transition-all disabled:opacity-40 cursor-pointer"
               >
                 <RefreshCw className={`w-3.5 h-3.5 ${isVerifying ? "animate-spin" : ""}`} />
@@ -1007,6 +1007,10 @@ export const CorrectionStudioView: React.FC<CorrectionStudioProps> = ({
             <p className="text-[11px] text-slate-500 font-medium">
               Auditor persona has read-only assurance permissions.
             </p>
+          ) : currentUser.id === content.submitterId ? (
+            <p className="text-[11px] text-amber-600 font-semibold">
+              4-Eyes Principle: You authored this draft. A different Brand Admin or Reviewer must authorize publication.
+            </p>
           ) : (
             <p className="text-[11px] text-slate-500">
               Brand Admin authority active. Approvals require zero open high-risk findings, or explicit recorded override.
@@ -1046,8 +1050,10 @@ export const CorrectionStudioView: React.FC<CorrectionStudioProps> = ({
             onClick={() => handleReviewDecision("APPROVED", "Verified against approved brand knowledge items.")}
             disabled={
               currentUser.role !== "BRAND_ADMIN" ||
+              currentUser.id === content.submitterId ||
               findings.some((f: any) => f.severity === "HIGH" && f.resolutionStatus === "OPEN")
             }
+            title={currentUser.id === content.submitterId ? "4-eyes governance: Authors cannot approve their own submissions" : undefined}
             className="flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 text-white text-xs font-extrabold rounded-full shadow-[0_6px_20px_rgba(16,185,129,0.3)] hover:scale-105 active:scale-95 transition-all disabled:opacity-40 whitespace-nowrap cursor-pointer"
           >
             <Check className="w-4 h-4 stroke-[2.5]" />
