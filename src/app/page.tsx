@@ -29,6 +29,38 @@ export default function Home() {
   const [studioContentId, setStudioContentId] = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+  const [theme, setTheme] = useState<"dark" | "light">("dark");
+
+  useEffect(() => {
+    try {
+      const savedTheme = (localStorage.getItem("inkloom_theme") as "dark" | "light") || "dark";
+      setTheme(savedTheme);
+      document.documentElement.setAttribute("data-theme", savedTheme);
+      if (savedTheme === "dark") {
+        document.documentElement.classList.add("dark");
+        document.documentElement.classList.remove("light");
+      } else {
+        document.documentElement.classList.add("light");
+        document.documentElement.classList.remove("dark");
+      }
+    } catch {}
+  }, []);
+
+  const toggleTheme = () => {
+    const nextTheme = theme === "dark" ? "light" : "dark";
+    setTheme(nextTheme);
+    try {
+      localStorage.setItem("inkloom_theme", nextTheme);
+      document.documentElement.setAttribute("data-theme", nextTheme);
+      if (nextTheme === "dark") {
+        document.documentElement.classList.add("dark");
+        document.documentElement.classList.remove("light");
+      } else {
+        document.documentElement.classList.add("light");
+        document.documentElement.classList.remove("dark");
+      }
+    } catch {}
+  };
 
   // Fetch initial users from PostgreSQL with serverless cold-start resilience
   const fetchUsers = async (retryCount = 0) => {
@@ -156,9 +188,21 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-[#000000] p-2.5 sm:p-4 lg:p-6 flex flex-col items-center justify-start text-zinc-100 selection:bg-white selection:text-black font-sans">
-      {/* Master Canvas Frame (matching Fluxora obsidian aesthetic) */}
-      <div className="w-full max-w-[1680px] min-h-[94vh] bg-[#050507] rounded-[32px] sm:rounded-[40px] shadow-[0_20px_70px_rgba(0,0,0,0.85)] border border-white/[0.06] p-3 sm:p-5 flex flex-col lg:flex-row gap-5 relative">
+    <div
+      className={`min-h-screen transition-colors duration-150 ${
+        theme === "dark"
+          ? "bg-[#000000] text-zinc-100 selection:bg-white selection:text-black"
+          : "bg-[#f4f5f8] text-slate-900 selection:bg-slate-200 selection:text-slate-900"
+      } p-2.5 sm:p-4 lg:p-6 flex flex-col items-center justify-start font-sans`}
+    >
+      {/* Master Canvas Frame */}
+      <div
+        className={`w-full max-w-[1680px] min-h-[94vh] rounded-[32px] sm:rounded-[40px] border p-3 sm:p-5 flex flex-col lg:flex-row gap-5 relative transition-colors duration-150 ${
+          theme === "dark"
+            ? "bg-[#050507] border-white/[0.06] shadow-[0_20px_70px_rgba(0,0,0,0.85)]"
+            : "bg-[#ffffff] border-slate-200/80 shadow-[0_20px_60px_rgba(15,23,42,0.06)]"
+        }`}
+      >
         {/* 1. Left Vertical Sidebar (Fluxora Minimalist Resend-Style) */}
         <Sidebar
           activeTab={activeTab}
@@ -171,6 +215,8 @@ export default function Home() {
           aiMode="AI_ASSISTED"
           onSignOut={handleSignOut}
           onOpenSubmitModal={() => setActiveTab("submit")}
+          theme={theme}
+          onToggleTheme={toggleTheme}
         />
 
         {/* 2. Main Canvas Body */}
@@ -186,6 +232,8 @@ export default function Home() {
             onSelectTab={setActiveTab}
             onOpenAuthModal={() => setIsAuthModalOpen(true)}
             onSignOut={handleSignOut}
+            theme={theme}
+            onToggleTheme={toggleTheme}
           />
 
           {/* Active Workspace View */}

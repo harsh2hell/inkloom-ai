@@ -13,6 +13,8 @@ import {
   SlidersHorizontal,
   ChevronDown,
   LogOut,
+  Sun,
+  Moon,
 } from "lucide-react";
 import { UserProfile } from "./Navbar";
 
@@ -26,6 +28,8 @@ interface HeaderProps {
   onSelectTab?: (tab: string) => void;
   onOpenAuthModal?: () => void;
   onSignOut?: () => void;
+  theme?: "dark" | "light";
+  onToggleTheme?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -38,6 +42,8 @@ export const Header: React.FC<HeaderProps> = ({
   onSelectTab,
   onOpenAuthModal,
   onSignOut,
+  theme = "dark",
+  onToggleTheme,
 }) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [showPersonaMenu, setShowPersonaMenu] = useState(false);
@@ -129,6 +135,22 @@ export const Header: React.FC<HeaderProps> = ({
         >
           <Plus className="w-4 h-4 text-zinc-300" />
         </button>
+
+        {/* Light / Dark Mode Switch */}
+        {onToggleTheme && (
+          <button
+            onClick={onToggleTheme}
+            className={`w-9 h-9 rounded-full flex items-center justify-center transition-all cursor-pointer border shadow-2xs ${
+              theme === "dark"
+                ? "bg-white/[0.04] hover:bg-white/[0.08] border-white/[0.08] text-amber-400"
+                : "bg-slate-100 hover:bg-slate-200 border-slate-200 text-slate-700"
+            }`}
+            title={theme === "dark" ? "Switch to Light Theme" : "Switch to Dark Theme"}
+            aria-label="Toggle Light and Dark Theme"
+          >
+            {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+          </button>
+        )}
 
         {/* Persona Profile Card (avatar + name + role + switcher dropdown) */}
         <div className="relative">

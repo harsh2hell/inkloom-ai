@@ -16,6 +16,8 @@ import {
   ChevronsUpDown,
   Check,
   Cpu,
+  Sun,
+  Moon,
 } from "lucide-react";
 import { UserProfile } from "./Navbar";
 
@@ -30,6 +32,8 @@ export interface SidebarProps {
   aiMode?: string;
   onSignOut?: () => void;
   onOpenSubmitModal?: () => void;
+  theme?: "dark" | "light";
+  onToggleTheme?: () => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -42,6 +46,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onClose,
   onSignOut,
   onOpenSubmitModal,
+  theme = "dark",
+  onToggleTheme,
 }) => {
   const [workspaceDropdownOpen, setWorkspaceDropdownOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
@@ -130,7 +136,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
       {/* Standard Sidebar — Resend / Fluxora Minimalist Design */}
       <aside
-        className={`fixed lg:static inset-y-0 left-0 z-50 flex flex-col bg-[#09090b] border-r border-white/[0.06] lg:border lg:border-white/[0.06] lg:rounded-[28px] p-3 transition-transform duration-200 select-none shadow-2xl ${
+        className={`fixed lg:static inset-y-0 left-0 z-50 flex flex-col ${
+          theme === "dark"
+            ? "bg-[#09090b] border-white/[0.06] text-white"
+            : "bg-[#ffffff] border-slate-200/90 text-slate-900"
+        } border-r lg:border lg:rounded-[28px] p-3 transition-transform duration-200 select-none shadow-2xl ${
           isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         } w-[240px] min-w-[240px] max-w-[240px] shrink-0 h-full max-h-[calc(100vh-2.5rem)]`}
       >
@@ -322,6 +332,23 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <span className="text-blue-400">Deterministic AST</span>
           </div>
         </div>
+
+        {/* Theme Switcher in Sidebar */}
+        {onToggleTheme && (
+          <div className="px-2.5 py-1.5 mb-2 rounded-xl bg-black/40 border border-white/[0.04] flex items-center justify-between text-[10px] font-mono shrink-0">
+            <span className="text-zinc-400 flex items-center gap-1.5">
+              {theme === "dark" ? <Moon className="w-3 h-3 text-zinc-400" /> : <Sun className="w-3 h-3 text-amber-500" />}
+              <span>{theme === "dark" ? "Dark Obsidian" : "Clean Light"}</span>
+            </span>
+            <button
+              onClick={onToggleTheme}
+              className="px-2 py-0.5 rounded-md bg-white/[0.06] hover:bg-white/[0.12] text-zinc-200 transition-colors cursor-pointer text-[9px] font-mono font-semibold"
+              title="Toggle Theme"
+            >
+              SWITCH
+            </button>
+          </div>
+        )}
 
         {/* ── 6. Bottom User Profile & Session Controls (from Fluxora) ── */}
         <div className="pt-2 border-t border-white/[0.06] mt-auto relative shrink-0">
