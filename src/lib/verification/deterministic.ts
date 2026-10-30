@@ -136,7 +136,54 @@ export function runDeterministicChecks(
     }
   }
 
-  // 5. Check Missing Alt Text if media attachment is flagged
+  // 5. Check for Unsupported Medical / Functional Claims (Coverage gap — honest "no source found")
+  const unsupportedTriggers = [
+    { phrase: "miracle detox", snippet: "miracle detox" },
+    { phrase: "cures fatigue", snippet: "cures fatigue" },
+    { phrase: "10x muscle", snippet: "10x muscle recovery" },
+    { phrase: "reverses aging", snippet: "reverses aging" },
+    { phrase: "burns fat overnight", snippet: "burns fat overnight" },
+  ];
+
+  for (const item of unsupportedTriggers) {
+    if (textNorm.includes(normalizeText(item.phrase))) {
+      findings.push({
+        type: FindingType.UNSUPPORTED_CLAIM,
+        severity: FindingSeverity.HIGH,
+        affectedText: item.snippet,
+        explanation: `Draft asserts an unsubstantiated functional/health claim ('${item.snippet}'). No approved brand evidence found in the Knowledge Centre registry (Coverage gap).`,
+        sourceReferenceId: null, // Honest "no source found"
+        quotedExcerpt: null,
+        subReason: "Coverage gap",
+        suggestedCorrection: "crafted with wholesome plant ingredients for daily vitality",
+        suggestedCorrectionSupported: false,
+      });
+    }
+  }
+
+  // 6. Check for Brand Tone / Style Suggestions (KB-VER-008 & KB-VER-009)
+  const styleTriggers = [
+    { phrase: "guilt-free magic", label: "guilt-free magic", fix: "mindfully crafted plant crunch" },
+    { phrase: "junk substitute", label: "junk substitute", fix: "wholesome whole-food snack" },
+    { phrase: "miraculous", label: "miraculous transformation", fix: "uplifting daily energy" },
+  ];
+
+  for (const item of styleTriggers) {
+    if (textNorm.includes(normalizeText(item.phrase))) {
+      findings.push({
+        type: FindingType.STYLE_SUGGESTION,
+        severity: FindingSeverity.LOW,
+        affectedText: item.label,
+        explanation: `Draft uses sensational phrasing ('${item.label}'). Guideline KB-VER-008 requires transparent, grounded messaging celebrating real ingredients.`,
+        sourceReferenceId: "KB-VER-008",
+        quotedExcerpt: "Tone must be grounded, transparent, and uplifting. Celebrate real ingredients without exaggerated functional promises.",
+        suggestedCorrection: item.fix,
+        suggestedCorrectionSupported: true,
+      });
+    }
+  }
+
+  // 7. Check Missing Alt Text if media attachment is flagged
   if (context.hasMediaWithoutAlt) {
     findings.push({
       type: FindingType.POSSIBLE_RISK,

@@ -5,7 +5,20 @@ const prisma = new PrismaClient();
 async function main() {
   console.log("Seeding Inkloom AI database (idempotent, non-destructive)...");
 
-  // 1. Seed / Upsert Users representing the 4 Core Roles
+  // 1. Seed / Upsert Users representing the 5 Core Roles
+  const ownerUser = await prisma.user.upsert({
+    where: { id: "usr_owner_01" },
+    update: {},
+    create: {
+      id: "usr_owner_01",
+      name: "Elena Vance",
+      email: "elena.vance@verdantafoods.demo",
+      role: Role.BRAND_OWNER,
+      organization: "Verdanta Foods Executive",
+      avatarUrl: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150",
+    },
+  });
+
   const adminUser = await prisma.user.upsert({
     where: { id: "usr_admin_01" },
     update: {},
@@ -58,7 +71,7 @@ async function main() {
     },
   });
 
-  console.log("Verified / seeded 4 core users.");
+  console.log("Verified / seeded 5 core users across all RBAC personas.");
 
   // 2. Seed / Upsert Brand
   const brand = await prisma.brand.upsert({
@@ -190,6 +203,34 @@ async function main() {
       effectiveDate: pastDate,
       expiryDate: futureDate,
     },
+    {
+      id: "KB-VER-009",
+      brandId: brand.id,
+      title: "Brand Terminology: Plant Crunch™ & Clean Energy",
+      content: "Official trademark and naming guidelines: Always use 'Verdanta Plant Crunch™' on first reference. Approved descriptors: 'plant-based energy', 'whole food crunch', 'clean fuel'. Prohibited slang: 'junk substitute', 'guilt-free magic'.",
+      category: KnowledgeCategory.TERMINOLOGY,
+      sourceDocument: "Verdanta_Brand_Style_Guide_2026.pdf",
+      sourceExcerpt: "Always use 'Verdanta Plant Crunch™' on first reference. Approved descriptors include 'plant-based energy' and 'clean fuel'.",
+      owner: "Brand Marketing Directorate",
+      approvalStatus: ApprovalStatus.APPROVED,
+      version: 1,
+      effectiveDate: pastDate,
+      expiryDate: futureDate,
+    },
+    {
+      id: "KB-VER-010",
+      brandId: brand.id,
+      title: "Approved Brand Asset: Logo & Color Palette",
+      content: "Primary Brand Logo: Verdanta Leaf Icon + Wordmark (SVG/PNG). Approved Brand Color Palette: Forest Green (#2D5A27), Earth Terracotta (#E05638), Warm Canvas (#F4F5F8). Alt-text requirement: 'Verdanta Foods organic leaf brand mark'.",
+      category: KnowledgeCategory.ASSET,
+      sourceDocument: "Verdanta_Visual_Identity_Specification_2026.pdf",
+      sourceExcerpt: "Visual Identity Spec: Primary logo must appear in #2D5A27 on light backgrounds. Required alt-text: 'Verdanta Foods organic leaf brand mark'.",
+      owner: "Creative & Brand Design Studio",
+      approvalStatus: ApprovalStatus.APPROVED,
+      version: 1,
+      effectiveDate: pastDate,
+      expiryDate: futureDate,
+    },
   ];
 
   for (const item of knowledgeDefinitions) {
@@ -200,7 +241,7 @@ async function main() {
     });
   }
 
-  console.log("Verified / seeded 8 Knowledge Items without destructive deletes.");
+  console.log("Verified / seeded 10 Knowledge Items across all categories.");
 
   // 4. Seed initial sample content item if not already existing
   const existingSample = await prisma.contentItem.findUnique({

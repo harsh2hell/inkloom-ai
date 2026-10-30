@@ -21,6 +21,7 @@ export interface RawFindingInput {
   quotedExcerpt?: string | null;
   suggestedCorrection?: string | null;
   suggestedCorrectionSupported?: boolean;
+  subReason?: "Coverage gap" | "Partial or conflicting" | "Unverified citation" | null;
 }
 
 export interface ValidatedFindingResult {
@@ -33,6 +34,9 @@ export interface ValidatedFindingResult {
   quotedExcerpt?: string | null;
   citationValid: boolean;
   citationFailureReason?: string | null;
+  insufficientEvidenceSubReason?: "Coverage gap" | "Partial or conflicting" | "Unverified citation" | null;
+  routedReviewer?: string | null;
+  sourceVersion?: number | null;
   suggestedCorrection?: string | null;
   suggestedCorrectionSupported: boolean;
   requiresHumanReview: boolean;
@@ -97,6 +101,12 @@ export function validateFindingCitation(
       rawFinding.type === FindingType.UNSUPPORTED_CLAIM ||
       rawFinding.type === FindingType.INSUFFICIENT_EVIDENCE;
 
+    const subReason =
+      rawFinding.subReason ||
+      (rawFinding.type === FindingType.UNSUPPORTED_CLAIM || rawFinding.type === FindingType.INSUFFICIENT_EVIDENCE
+        ? "Coverage gap"
+        : null);
+
     return {
       type: rawFinding.type,
       severity: rawFinding.severity,
@@ -106,7 +116,10 @@ export function validateFindingCitation(
       sourceReferenceId: null,
       quotedExcerpt: null,
       citationValid: false,
-      citationFailureReason: null,
+      citationFailureReason: rawFinding.type === FindingType.UNSUPPORTED_CLAIM ? "No matching brand truth specification found in registry (Coverage gap)." : null,
+      insufficientEvidenceSubReason: subReason,
+      routedReviewer: requiresReview ? "Sarah Chen (Brand Admin)" : null,
+      sourceVersion: null,
       suggestedCorrection: sanitizeOrNeutralizeCorrection(
         rawFinding.suggestedCorrection,
         rawFinding.suggestedCorrectionSupported ?? false
@@ -129,6 +142,9 @@ export function validateFindingCitation(
       quotedExcerpt: quotedExcerpt || null,
       citationValid: false,
       citationFailureReason: `Unknown or invented source ID: '${sourceId}' does not exist in approved brand repository.`,
+      insufficientEvidenceSubReason: "Coverage gap",
+      routedReviewer: "Sarah Chen (Brand Admin)",
+      sourceVersion: null,
       suggestedCorrection: sanitizeOrNeutralizeCorrection(rawFinding.suggestedCorrection, false),
       suggestedCorrectionSupported: false,
       requiresHumanReview: true, // Non-negotiable: downgraded citations require human review
@@ -147,6 +163,9 @@ export function validateFindingCitation(
       quotedExcerpt: quotedExcerpt || null,
       citationValid: false,
       citationFailureReason: `Referenced knowledge item '${sourceId}' is not approved (status: ${kbItem.approvalStatus}).`,
+      insufficientEvidenceSubReason: "Unverified citation",
+      routedReviewer: "Sarah Chen (Brand Admin)",
+      sourceVersion: kbItem.version,
       suggestedCorrection: sanitizeOrNeutralizeCorrection(rawFinding.suggestedCorrection, false),
       suggestedCorrectionSupported: false,
       requiresHumanReview: true,
@@ -165,6 +184,9 @@ export function validateFindingCitation(
       quotedExcerpt: quotedExcerpt || null,
       citationValid: false,
       citationFailureReason: `Referenced evidence in '${sourceId}' expired on ${new Date(kbItem.expiryDate).toISOString().split("T")[0]}.`,
+      insufficientEvidenceSubReason: "Unverified citation",
+      routedReviewer: "Sarah Chen (Brand Admin)",
+      sourceVersion: kbItem.version,
       suggestedCorrection: sanitizeOrNeutralizeCorrection(rawFinding.suggestedCorrection, false),
       suggestedCorrectionSupported: false,
       requiresHumanReview: true,
@@ -177,6 +199,13 @@ export function validateFindingCitation(
     const matches = matchesSourceExcerpt(combinedStoredSource, quotedExcerpt);
 
     if (!matches) {
+      // Determine if partial overlap exists
+      const normSource = normalizeText(combinedStoredSource);
+      const normExcerpt = normalizeText(quotedExcerpt);
+      const words = normExcerpt.split(" ").filter((w) => w.length > 2);
+      const partialOverlap = words.length > 0 && words.some((w) => normSource.includes(w));
+      const subReason = partialOverlap ? "Partial or conflicting" : "Unverified citation";
+
       return {
         type: FindingType.INSUFFICIENT_EVIDENCE,
         severity: "HIGH",
@@ -187,6 +216,9 @@ export function validateFindingCitation(
         quotedExcerpt: quotedExcerpt,
         citationValid: false,
         citationFailureReason: `Quotation does not match stored approved source in '${sourceId}'.`,
+        insufficientEvidenceSubReason: subReason,
+        routedReviewer: "Sarah Chen (Brand Admin)",
+        sourceVersion: kbItem.version,
         suggestedCorrection: sanitizeOrNeutralizeCorrection(rawFinding.suggestedCorrection, false),
         suggestedCorrectionSupported: false,
         requiresHumanReview: true,
@@ -210,6 +242,9 @@ export function validateFindingCitation(
     quotedExcerpt: quotedExcerpt || kbItem.sourceExcerpt,
     citationValid: true,
     citationFailureReason: null,
+    insufficientEvidenceSubReason: null,
+    routedReviewer: isHighRiskOrUncertain ? "Sarah Chen (Brand Admin)" : null,
+    sourceVersion: kbItem.version,
     suggestedCorrection: rawFinding.suggestedCorrection || null,
     suggestedCorrectionSupported: rawFinding.suggestedCorrectionSupported ?? true,
     requiresHumanReview: isHighRiskOrUncertain,

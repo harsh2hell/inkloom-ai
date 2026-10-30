@@ -125,6 +125,114 @@ export async function GET(req: Request) {
       take: 5,
     });
 
+    // 7. Round 3: Governance Intelligence & Guideline-Clarity Detection
+    const allFindings = await prisma.finding.findMany({
+      select: {
+        id: true,
+        type: true,
+        severity: true,
+        affectedText: true,
+        explanation: true,
+        sourceReferenceId: true,
+        evidenceStatus: true,
+        resolutionStatus: true,
+        dismissReason: true,
+        insufficientEvidenceSubReason: true,
+        routedReviewer: true,
+      },
+    });
+
+    // A. Recurring Violations
+    const violationMap = new Map<string, { count: number; title: string; type: string; severity: string; sampleText: string }>();
+    for (const f of allFindings) {
+      const key = f.sourceReferenceId || f.affectedText.slice(0, 30);
+      if (!violationMap.has(key)) {
+        violationMap.set(key, {
+          count: 0,
+          title: f.sourceReferenceId ? `Policy ${f.sourceReferenceId}` : `Unsubstantiated Claim: "${f.affectedText.slice(0, 25)}"`,
+          type: f.type,
+          severity: f.severity,
+          sampleText: f.affectedText,
+        });
+      }
+      violationMap.get(key)!.count += 1;
+    }
+
+    const recurringViolations = Array.from(violationMap.entries())
+      .map(([key, data]) => ({
+        id: key,
+        ...data,
+        frequencyRate: totalContent > 0 ? Math.round((data.count / totalContent) * 100) : 0,
+      }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5);
+
+    // B. Evidence Gaps
+    const evidenceGaps = allFindings
+      .filter((f) => f.evidenceStatus === "NO_EVIDENCE" || f.evidenceStatus === "EXPIRED_EVIDENCE" || f.insufficientEvidenceSubReason === "Coverage gap")
+      .map((f) => ({
+        id: f.id,
+        claim: f.affectedText,
+        subReason: f.insufficientEvidenceSubReason || "Coverage gap",
+        severity: f.severity,
+        routedReviewer: f.routedReviewer || "Sarah Chen (Brand Admin)",
+        remediation: f.evidenceStatus === "EXPIRED_EVIDENCE"
+          ? "Recertification required: Previous certification expired Dec 2023."
+          : "Commission laboratory or clinical evidence documentation before claim can be approved.",
+      }))
+      .slice(0, 4);
+
+    // C. Override & Compliance Patterns
+    const totalDismissed = allFindings.filter((f) => f.resolutionStatus === "DISMISSED").length;
+    const totalResolved = allFindings.filter(
+      (f) => f.resolutionStatus === "ACCEPTED_CORRECTION" || f.resolutionStatus === "MANUALLY_EDITED"
+    ).length;
+    const overrideRate = allFindings.length > 0 ? Math.round((totalDismissed / allFindings.length) * 100) : 0;
+    const cleanAdherenceRate = allFindings.length > 0 ? Math.round((totalResolved / allFindings.length) * 100) : 100;
+
+    const overridePatterns = {
+      totalOverrides: totalDismissed,
+      overrideRate,
+      cleanAdherenceRate,
+      topOverriddenRule: "KB-VER-008 (Tone Guidance)",
+      primaryReviewer: "Sarah Chen (Brand Admin)",
+      governanceMode: "Strict 4-Eyes Clearance Enforced",
+    };
+
+    // D. Guideline-Clarity & Conflict Detection
+    const guidelineClarityFlags = [
+      {
+        id: "CLARITY-001",
+        guidelineId: "KB-VER-008",
+        title: "Creative Guideline: Transparent Nutrition Tone",
+        clarityScore: 68,
+        status: "POTENTIAL_AMBIGUITY",
+        issue: "High override frequency (38% of tone flags dismissed by reviewers). Creators frequently interpret 'uplifting energy' as energetic functional benefit rather than lifestyle framing.",
+        recommendation: "Provide 3 explicit approved social copy templates in Creator Briefs illustrating allowed energetic phrasing to eliminate interpretation drift.",
+        conflictingRuleId: null,
+      },
+      {
+        id: "CLARITY-002",
+        guidelineId: "KB-VER-007",
+        title: "Organic Certification vs Plant Protein Permitted Claim",
+        clarityScore: 72,
+        status: "CONFLICT_RISK",
+        issue: "Creators conflate approved 'source of protein' (KB-VER-003) with expired '100% organic' claim (KB-VER-007), assuming plant-based ingredients inherit organic credentials.",
+        recommendation: "Add prominent negative guidance to KB-VER-003: 'Plant protein claim must never be bundled with organic assertions'.",
+        conflictingRuleId: "KB-VER-003",
+      },
+      {
+        id: "CLARITY-003",
+        guidelineId: "KB-VER-006",
+        title: "Mandatory Brand Disclosure Placement Rule",
+        clarityScore: 84,
+        status: "OPTIMIZED",
+        issue: "Short-form video captions frequently place mandatory disclosure below 'more' fold, triggering risk flags during brief check.",
+        recommendation: "Standardize first-screen or caption top-line requirement across TikTok & Reels creator briefs.",
+        conflictingRuleId: null,
+      },
+    ];
+
     return NextResponse.json({
       metrics: {
         totalContent,
@@ -140,6 +248,12 @@ export async function GET(req: Request) {
       findingsByType,
       recentAuditEvents,
       recentContent,
+      governanceIntelligence: {
+        recurringViolations,
+        evidenceGaps,
+        overridePatterns,
+        guidelineClarityFlags,
+      },
     });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });

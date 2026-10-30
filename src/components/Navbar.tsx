@@ -7,7 +7,7 @@ export interface UserProfile {
   id: string;
   name: string;
   email: string;
-  role: "BRAND_ADMIN" | "AGENCY_CREATOR" | "EXTERNAL_CREATOR" | "AUDITOR";
+  role: "BRAND_OWNER" | "BRAND_ADMIN" | "AGENCY_CREATOR" | "EXTERNAL_CREATOR" | "AUDITOR";
   organization: string;
   avatarUrl?: string | null;
 }
@@ -33,6 +33,8 @@ export const Navbar: React.FC<NavbarProps> = ({
 }) => {
   const getRoleBadge = (role: string) => {
     switch (role) {
+      case "BRAND_OWNER":
+        return { bg: "bg-indigo-100 text-indigo-800 border-indigo-200", label: "Brand Owner / Executive" };
       case "BRAND_ADMIN":
         return { bg: "bg-purple-100 text-purple-800 border-purple-200", label: "Brand Admin / Reviewer" };
       case "AGENCY_CREATOR":

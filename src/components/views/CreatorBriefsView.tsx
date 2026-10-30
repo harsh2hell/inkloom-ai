@@ -43,6 +43,51 @@ export const CreatorBriefsView: React.FC<CreatorBriefsProps> = ({ currentUser })
   const [modalCreatorHandle, setModalCreatorHandle] = useState("@verdanta_creator");
   const [modalCreatorPlatform, setModalCreatorPlatform] = useState("INSTAGRAM");
   const [generateError, setGenerateError] = useState<string | null>(null);
+  const [clearingSubmissionId, setClearingSubmissionId] = useState<string | null>(null);
+
+  const parseBriefItems = (raw: any): any[] => {
+    if (!raw) return [];
+    if (Array.isArray(raw)) return raw;
+    try {
+      const parsed = JSON.parse(raw);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  };
+
+  const handleClearance = async (submissionId: string, decision: "CLEARED" | "CHANGES_REQUESTED") => {
+    if (!selectedBriefId) return;
+    setClearingSubmissionId(submissionId);
+    try {
+      const res = await fetch(`/api/briefs/${selectedBriefId}/submissions`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          submissionId,
+          reviewerId: currentUser.id,
+          decision,
+          notes:
+            decision === "CLEARED"
+              ? "Final publication clearance confirmed by authorized brand reviewer."
+              : "Revisions requested by brand reviewer prior to release.",
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to confirm clearance");
+      await fetchBriefs();
+      if (lastSubmissionResult?.submission?.id === submissionId) {
+        setLastSubmissionResult((prev: any) => ({
+          ...prev,
+          submission: data.submission,
+        }));
+      }
+    } catch (err: any) {
+      alert(err.message || "Clearance update failed");
+    } finally {
+      setClearingSubmissionId(null);
+    }
+  };
 
   const fetchBriefs = async () => {
     try {
@@ -268,8 +313,8 @@ export const CreatorBriefsView: React.FC<CreatorBriefsProps> = ({ currentUser })
                     <p className="text-slate-600 leading-relaxed">{selectedBrief.keyMessage}</p>
                   </div>
 
-                  {/* Document Grid: Permitted, Prohibited, Mandatory, Facts */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                  {/* Document Grid: Permitted, Prohibited, Mandatory, Facts, Assets */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 text-xs">
                     {/* Permitted Claims */}
                     <div className="p-3 rounded-lg bg-emerald-50/40 border border-emerald-200">
                       <span className="font-bold text-emerald-800 flex items-center gap-1.5 mb-2 text-xs">
@@ -277,12 +322,15 @@ export const CreatorBriefsView: React.FC<CreatorBriefsProps> = ({ currentUser })
                         Permitted Claims
                       </span>
                       <ul className="space-y-1 text-slate-700 text-[11px]">
-                        {selectedBrief.permittedClaims.map((claim: string, i: number) => (
-                          <li key={i} className="flex items-start gap-1.5">
-                            <span className="text-emerald-500 mt-0.5">•</span>
-                            <span>{claim}</span>
-                          </li>
-                        ))}
+                        {parseBriefItems(selectedBrief.permittedClaims).map((item: any, i: number) => {
+                          const text = typeof item === "string" ? item : item.claim || item.text || JSON.stringify(item);
+                          return (
+                            <li key={i} className="flex items-start gap-1.5">
+                              <span className="text-emerald-500 mt-0.5">•</span>
+                              <span>{text}</span>
+                            </li>
+                          );
+                        })}
                       </ul>
                     </div>
 
@@ -293,12 +341,15 @@ export const CreatorBriefsView: React.FC<CreatorBriefsProps> = ({ currentUser })
                         Strictly Prohibited Claims
                       </span>
                       <ul className="space-y-1 text-slate-700 text-[11px]">
-                        {selectedBrief.prohibitedClaims.map((claim: string, i: number) => (
-                          <li key={i} className="flex items-start gap-1.5">
-                            <span className="text-rose-500 mt-0.5">•</span>
-                            <span>{claim}</span>
-                          </li>
-                        ))}
+                        {parseBriefItems(selectedBrief.prohibitedClaims).map((item: any, i: number) => {
+                          const text = typeof item === "string" ? item : item.claim || item.rule || JSON.stringify(item);
+                          return (
+                            <li key={i} className="flex items-start gap-1.5">
+                              <span className="text-rose-500 mt-0.5">•</span>
+                              <span>{text}</span>
+                            </li>
+                          );
+                        })}
                       </ul>
                     </div>
 
@@ -309,12 +360,15 @@ export const CreatorBriefsView: React.FC<CreatorBriefsProps> = ({ currentUser })
                         Mandatory Disclosures
                       </span>
                       <ul className="space-y-1 text-slate-700 text-[11px]">
-                        {selectedBrief.mandatoryDisclosures.map((disc: string, i: number) => (
-                          <li key={i} className="flex items-start gap-1.5">
-                            <span className="text-purple-500 mt-0.5">•</span>
-                            <span>{disc}</span>
-                          </li>
-                        ))}
+                        {parseBriefItems(selectedBrief.mandatoryDisclosures).map((item: any, i: number) => {
+                          const text = typeof item === "string" ? item : item.disclosure || item.text || JSON.stringify(item);
+                          return (
+                            <li key={i} className="flex items-start gap-1.5">
+                              <span className="text-purple-500 mt-0.5">•</span>
+                              <span>{text}</span>
+                            </li>
+                          );
+                        })}
                       </ul>
                     </div>
 
@@ -325,13 +379,49 @@ export const CreatorBriefsView: React.FC<CreatorBriefsProps> = ({ currentUser })
                         Approved Product Facts
                       </span>
                       <ul className="space-y-1 text-slate-700 text-[11px]">
-                        {selectedBrief.approvedFacts.map((fact: string, i: number) => (
-                          <li key={i} className="flex items-start gap-1.5">
-                            <span className="text-slate-400 mt-0.5">•</span>
-                            <span>{fact}</span>
-                          </li>
-                        ))}
+                        {parseBriefItems(selectedBrief.approvedFacts).map((item: any, i: number) => {
+                          const text = typeof item === "string" ? item : item.fact ? `${item.fact}: ${item.detail || ''}` : JSON.stringify(item);
+                          return (
+                            <li key={i} className="flex items-start gap-1.5">
+                              <span className="text-slate-400 mt-0.5">•</span>
+                              <span>{text}</span>
+                            </li>
+                          );
+                        })}
                       </ul>
+                    </div>
+
+                    {/* Approved Brand Assets (Round 3) */}
+                    <div className="p-3 rounded-lg bg-indigo-50/40 border border-indigo-200 md:col-span-2">
+                      <span className="font-bold text-indigo-900 flex items-center gap-1.5 mb-2 text-xs">
+                        <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
+                        Approved Brand Assets & Palette (KB-VER-010)
+                      </span>
+                      <div className="space-y-1.5 text-[11px] text-slate-700">
+                        <div className="flex items-center gap-2">
+                          <span className="font-semibold text-slate-900">Logo Specification:</span>
+                          <span>Verdanta Leaf Icon & Wordmark in #2D5A27 on light backgrounds</span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <span className="font-semibold text-slate-900">Brand Color Swatches:</span>
+                          <span className="inline-flex items-center gap-1">
+                            <span className="w-3 h-3 rounded-full bg-[#2D5A27] inline-block border border-slate-300"></span>
+                            <span>#2D5A27 (Forest)</span>
+                          </span>
+                          <span className="inline-flex items-center gap-1">
+                            <span className="w-3 h-3 rounded-full bg-[#E05638] inline-block border border-slate-300"></span>
+                            <span>#E05638 (Terracotta)</span>
+                          </span>
+                          <span className="inline-flex items-center gap-1">
+                            <span className="w-3 h-3 rounded-full bg-[#F4F5F8] inline-block border border-slate-300"></span>
+                            <span>#F4F5F8 (Canvas)</span>
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2 text-[10px] text-slate-500">
+                          <span>Required alt-text on social visual assets:</span>
+                          <em className="text-indigo-800">&quot;Verdanta Foods organic leaf brand mark&quot;</em>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -437,6 +527,105 @@ export const CreatorBriefsView: React.FC<CreatorBriefsProps> = ({ currentUser })
                           )}
                         </div>
                       )}
+
+                      {/* Named Human Clearance Action (Round 3 Improvement 2) */}
+                      <div className="mt-4 pt-3 border-t border-slate-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div>
+                          <div className="text-[11px] font-bold text-slate-900 flex items-center gap-1.5">
+                            <ShieldCheck className="w-3.5 h-3.5 text-indigo-600" />
+                            <span>Named Human Publication Clearance Gate</span>
+                          </div>
+                          <p className="text-[10px] text-slate-500 mt-0.5">
+                            {lastSubmissionResult.submission?.clearanceStatus === "CLEARED" ? (
+                              <span className="text-emerald-700 font-semibold">
+                                ✓ Publication cleared by {lastSubmissionResult.submission.clearedByName || "Brand Admin"}
+                                {lastSubmissionResult.submission.clearedAt && ` on ${new Date(lastSubmissionResult.submission.clearedAt).toLocaleDateString()}`}
+                              </span>
+                            ) : (
+                              <span>Awaiting authorized human confirmation before social media publishing.</span>
+                            )}
+                          </p>
+                        </div>
+
+                        {(currentUser.role === "BRAND_ADMIN" || currentUser.role === "BRAND_OWNER") ? (
+                          <div className="flex items-center gap-2 shrink-0">
+                            <button
+                              type="button"
+                              disabled={clearingSubmissionId === lastSubmissionResult.submission?.id}
+                              onClick={() => handleClearance(lastSubmissionResult.submission?.id, "CHANGES_REQUESTED")}
+                              className="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs font-semibold rounded-lg transition-colors cursor-pointer"
+                            >
+                              Request Changes
+                            </button>
+                            <button
+                              type="button"
+                              disabled={clearingSubmissionId === lastSubmissionResult.submission?.id}
+                              onClick={() => handleClearance(lastSubmissionResult.submission?.id, "CLEARED")}
+                              className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-lg shadow-2xs transition-colors cursor-pointer"
+                            >
+                              {clearingSubmissionId === lastSubmissionResult.submission?.id ? "Confirming..." : "Confirm Publication Clearance"}
+                            </button>
+                          </div>
+                        ) : (
+                          <span className="text-[10px] font-medium text-slate-400 bg-slate-100 px-2.5 py-1 rounded-md">
+                            Clearance sign-off reserved for Brand Reviewers
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Submission Clearance Log on this brief */}
+                  {selectedBrief.creatorSubmissions?.length > 0 && (
+                    <div className="pt-4 border-t border-slate-100 space-y-2">
+                      <div className="text-[11px] font-bold text-slate-700 uppercase tracking-wider">
+                        Creator Submission & Clearance Log ({selectedBrief.creatorSubmissions.length})
+                      </div>
+                      <div className="space-y-2">
+                        {selectedBrief.creatorSubmissions.map((sub: any) => (
+                          <div
+                            key={sub.id}
+                            className="p-3 rounded-lg border border-slate-200/80 bg-slate-50/60 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2"
+                          >
+                            <div>
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className="font-semibold text-slate-900">{sub.title}</span>
+                                <span className="text-[10px] text-slate-400">
+                                  by {sub.creator?.name || "Creator"} • {new Date(sub.createdAt).toLocaleDateString()}
+                                </span>
+                              </div>
+                              <p className="text-[11px] text-slate-600 font-mono italic truncate max-w-md">
+                                &quot;{sub.caption}&quot;
+                              </p>
+                            </div>
+
+                            <div className="flex items-center gap-2 shrink-0">
+                              <span
+                                className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                                  sub.clearanceStatus === "CLEARED" || sub.status === "APPROVED"
+                                    ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                                    : "bg-amber-50 text-amber-700 border border-amber-200"
+                                }`}
+                              >
+                                {sub.clearanceStatus === "CLEARED" || sub.status === "APPROVED"
+                                  ? `Cleared (${sub.clearedByName || "Reviewer"})`
+                                  : "Pending Clearance"}
+                              </span>
+
+                              {(currentUser.role === "BRAND_ADMIN" || currentUser.role === "BRAND_OWNER") &&
+                                sub.clearanceStatus !== "CLEARED" &&
+                                sub.status !== "APPROVED" && (
+                                  <button
+                                    onClick={() => handleClearance(sub.id, "CLEARED")}
+                                    className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-bold rounded shadow-2xs"
+                                  >
+                                    Clear
+                                  </button>
+                                )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   )}
                 </div>

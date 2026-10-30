@@ -34,6 +34,7 @@ export async function POST(req: NextRequest) {
 
     // Generate random avatar placeholder from unsplash based on role
     const defaultAvatars: Record<string, string> = {
+      BRAND_OWNER: "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=150",
       BRAND_ADMIN: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150",
       AGENCY_CREATOR: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150",
       EXTERNAL_CREATOR: "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150",

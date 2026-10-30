@@ -65,6 +65,19 @@ export async function generateCreatorBrief(options: GenerateBriefOptions) {
     .filter((k) => k.category === KnowledgeCategory.GUIDELINE)
     .map((k) => ({ id: k.id, guideline: k.title, text: k.content }));
 
+  const approvedAssets = brandKnowledge
+    .filter((k) => k.category === KnowledgeCategory.ASSET)
+    .map((k) => ({ id: k.id, asset: k.title, specification: k.content, excerpt: k.sourceExcerpt }));
+
+  if (approvedAssets.length === 0) {
+    approvedAssets.push({
+      id: "KB-VER-010",
+      asset: "Primary Brand Asset: Logo & Palette",
+      specification: "Verdanta Leaf Icon & Wordmark in Forest Green (#2D5A27), Terracotta Accent (#E05638). Alt-text required.",
+      excerpt: "Visual Identity Spec: Primary logo in #2D5A27.",
+    });
+  }
+
   const versionReference = `Version ${version.versionNumber} (Approved reference derived on ${new Date().toLocaleDateString()})`;
 
   const brief = await prisma.creatorBrief.create({
@@ -79,6 +92,7 @@ export async function generateCreatorBrief(options: GenerateBriefOptions) {
       mandatoryDisclosures: JSON.stringify(mandatoryDisclosures),
       approvedFacts: JSON.stringify(approvedFacts),
       guidelines: JSON.stringify(guidelines),
+      approvedAssets: JSON.stringify(approvedAssets),
     },
   });
 

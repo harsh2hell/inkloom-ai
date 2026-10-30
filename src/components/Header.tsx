@@ -53,6 +53,8 @@ export const Header: React.FC<HeaderProps> = ({
 
   const getRoleShort = (role: string) => {
     switch (role) {
+      case "BRAND_OWNER":
+        return "Brand Owner";
       case "BRAND_ADMIN":
         return "Brand Admin";
       case "AGENCY_CREATOR":

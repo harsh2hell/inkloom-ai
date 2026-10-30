@@ -14,6 +14,7 @@ import {
   Layers,
   Palette,
   Eye,
+  Crown,
 } from "lucide-react";
 import { UserProfile } from "./Navbar";
 
@@ -50,6 +51,13 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   if (!isOpen) return null;
 
   const roleOptions = [
+    {
+      id: "BRAND_OWNER",
+      title: "Brand Owner / Executive Sponsor",
+      desc: "Ultimate brand governance authority. Approves content, manages Truth Rules, and issues final publication clearances.",
+      icon: Crown,
+      color: "text-indigo-700 bg-indigo-50 border-indigo-200",
+    },
     {
       id: "BRAND_ADMIN",
       title: "Brand Content Admin",

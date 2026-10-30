@@ -801,27 +801,65 @@ export const CorrectionStudioView: React.FC<CorrectionStudioProps> = ({
                         {finding.explanation}
                       </p>
 
-                      {/* Brand Source of Truth Evidence Vault */}
+                      {/* Brand Source of Truth Evidence Vault & Full Traceability */}
                       <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80 text-xs space-y-2 mb-3">
-                        <div className="flex items-center justify-between text-[11px]">
-                          <span className="font-bold text-slate-800 flex items-center gap-1.5">
-                            <Database className="w-3.5 h-3.5 text-indigo-600" />
-                            Rule Ref: {finding.sourceReferenceId}
-                          </span>
+                        <div className="flex flex-wrap items-center justify-between gap-2 text-[11px]">
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold text-slate-800 flex items-center gap-1.5">
+                              <Database className="w-3.5 h-3.5 text-indigo-600" />
+                              {finding.sourceReferenceId ? (
+                                <>Rule Ref: <span className="font-mono">{finding.sourceReferenceId}</span></>
+                              ) : (
+                                <span className="text-slate-500 italic">No Source Found in Registry (Honest Disclosure)</span>
+                              )}
+                            </span>
 
-                          {/* Citation Validity Badge (STRICT CHECK) */}
-                          {finding.citationValid ? (
-                            <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200 flex items-center gap-1">
-                              <CheckCircle2 className="w-3 h-3 text-emerald-600" />
-                              Verified Grounding
-                            </span>
-                          ) : (
-                            <span className="text-[10px] font-bold text-rose-700 bg-rose-50 px-2 py-0.5 rounded-full border border-rose-200 flex items-center gap-1">
-                              <AlertTriangle className="w-3 h-3 text-rose-600" />
-                              Citation Invalid / Expired
-                            </span>
-                          )}
+                            {/* Version and Approval Status Traceability */}
+                            {finding.sourceReferenceId && (
+                              <span className="text-[10px] text-slate-500 bg-slate-100 px-2 py-0.5 rounded font-mono">
+                                {knowledgeItems.find((k: any) => k.id === finding.sourceReferenceId)?.approvalStatus || "APPROVED"} • v{knowledgeItems.find((k: any) => k.id === finding.sourceReferenceId)?.version || 1}
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Citation & Grounding Validity Badge */}
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            {finding.citationValid ? (
+                              <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200 flex items-center gap-1">
+                                <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                                Verified Citation
+                              </span>
+                            ) : (
+                              <span className="text-[10px] font-bold text-rose-700 bg-rose-50 px-2 py-0.5 rounded-full border border-rose-200 flex items-center gap-1">
+                                <AlertTriangle className="w-3 h-3 text-rose-600" />
+                                Citation Failed
+                              </span>
+                            )}
+
+                            {/* Explicit Insufficient-Evidence Sub-Reason Badge (Round 3 Improvement 1) */}
+                            {finding.insufficientEvidenceSubReason && (
+                              <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full border ${
+                                finding.insufficientEvidenceSubReason === "Coverage gap"
+                                  ? "bg-purple-50 text-purple-700 border-purple-200"
+                                  : finding.insufficientEvidenceSubReason === "Partial or conflicting"
+                                  ? "bg-amber-50 text-amber-700 border-amber-200"
+                                  : "bg-rose-50 text-rose-700 border-rose-200"
+                              }`}>
+                                {finding.insufficientEvidenceSubReason}
+                              </span>
+                            )}
+                          </div>
                         </div>
+
+                        {/* Routed Named Human Reviewer (Round 3 Improvement 1) */}
+                        {finding.routedReviewer && (
+                          <div className="flex items-center justify-between text-[10px] text-slate-500 pt-1 border-t border-slate-200/60">
+                            <span>Human Sign-off Route:</span>
+                            <span className="font-semibold text-indigo-700 bg-indigo-50/60 px-2 py-0.5 rounded border border-indigo-100">
+                              Routed to: {finding.routedReviewer}
+                            </span>
+                          </div>
+                        )}
 
                         {finding.quotedExcerpt && (
                           <p className="text-slate-600 text-[11px] italic bg-white p-2.5 rounded-xl border border-slate-200/60">

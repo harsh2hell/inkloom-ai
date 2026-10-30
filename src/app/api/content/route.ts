@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { verifyContent } from "@/lib/verification/engine";
+import { extractTextFromFile } from "@/lib/intake/extractor";
 import { ContentType, ContentStatus } from "@prisma/client";
 
 export async function GET(req: NextRequest) {
@@ -47,11 +48,39 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { campaignName, title, contentType, textContent, submitterId, forceDeterministicOnly } = body;
+    const {
+      campaignName,
+      title,
+      contentType,
+      textContent: incomingText,
+      fileBase64,
+      fileName,
+      imageUrl,
+      imageAltText,
+      detectedColors,
+      detectedLogo,
+      submitterId,
+      forceDeterministicOnly,
+    } = body;
+
+    let textContent = (incomingText || "").trim();
+
+    // Server-side Multi-format intake: Extract text if document file is uploaded
+    if (fileBase64 && fileName) {
+      try {
+        const fileBuffer = Buffer.from(fileBase64, "base64");
+        const extracted = extractTextFromFile(fileName, fileBuffer);
+        if (extracted.text) {
+          textContent = textContent ? `${textContent}\n\n[Extracted from ${fileName}]:\n${extracted.text}` : extracted.text;
+        }
+      } catch (err: any) {
+        console.warn("Server-side file text extraction warning:", err);
+      }
+    }
 
     if (!campaignName || !title || !textContent) {
       return NextResponse.json(
-        { error: "Campaign name, title, and text content are required." },
+        { error: "Campaign name, title, and valid text content (or uploaded file) are required." },
         { status: 400 }
       );
     }
@@ -85,7 +114,9 @@ export async function POST(req: NextRequest) {
         versionNumber: 1,
         textContent,
         submittedById: submitter.id,
-        changeNotes: "Initial draft submitted for compliance verification.",
+        imageUrl: imageUrl || null,
+        imageAltText: imageAltText || null,
+        changeNotes: fileName ? `Uploaded ${fileName} with server-side text extraction.` : "Initial draft submitted for compliance verification.",
       },
     });
 
@@ -103,11 +134,24 @@ export async function POST(req: NextRequest) {
           title,
           contentType,
           version: 1,
+          hasFileAttachment: Boolean(fileName),
+          hasVisualAsset: Boolean(imageUrl || imageAltText),
         }),
       },
     });
 
-    // 4. Run Verification Engine
+    // 4. Run Verification Engine with Visual Asset checks
+    const visualInput =
+      imageUrl || imageAltText || detectedColors || detectedLogo
+        ? {
+            imageUrl: imageUrl || null,
+            imageAltText: imageAltText || null,
+            imageFileName: fileName || null,
+            detectedColors: detectedColors || [],
+            detectedLogo: detectedLogo || null,
+          }
+        : undefined;
+
     const verificationResult = await verifyContent({
       contentVersionId: version1.id,
       textContent,
@@ -117,6 +161,7 @@ export async function POST(req: NextRequest) {
       userName: submitter.name,
       userRole: submitter.role,
       forceDeterministicOnly: Boolean(forceDeterministicOnly),
+      visualInput,
     });
 
     return NextResponse.json({

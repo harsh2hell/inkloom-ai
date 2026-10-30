@@ -32,8 +32,8 @@ describe("Inkloom AI — Zero Mock Data Enforcement Sprint Verification", () => 
     const totalBriefs = await prisma.creatorBrief.count();
 
     expect(totalContent).toBeGreaterThan(0);
-    expect(approvedTruthItems).toBe(8); // Verdanta Foods 8 truth items
-    expect(activeApprovedKnowledge).toBe(7); // 7 active specs
+    expect(approvedTruthItems).toBe(10); // Verdanta Foods 10 truth items (including Terminology & Asset)
+    expect(activeApprovedKnowledge).toBe(9); // 9 active specs
     expect(expiredKnowledge).toBe(1); // KB-VER-007 expired Dec 2023
     expect(totalBriefs).toBeGreaterThanOrEqual(1);
     expect(approvedContent + pendingReviews).toBeLessThanOrEqual(totalContent);
@@ -132,7 +132,7 @@ describe("Inkloom AI — Zero Mock Data Enforcement Sprint Verification", () => 
       orderBy: { id: "asc" },
     });
 
-    expect(items.length).toBe(8);
+    expect(items.length).toBe(10);
     const expiredItem = items.find((i) => i.id === "KB-VER-007");
     expect(expiredItem).toBeDefined();
     expect(expiredItem?.title).toContain("Organic Certificate");

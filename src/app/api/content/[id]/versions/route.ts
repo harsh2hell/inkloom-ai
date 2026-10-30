@@ -11,7 +11,16 @@ export async function POST(
     const params = await context.params;
     const { id } = params;
     const body = await req.json();
-    const { textContent, changeNotes, submitterId, forceDeterministicOnly } = body;
+    const {
+      textContent,
+      changeNotes,
+      submitterId,
+      forceDeterministicOnly,
+      imageUrl,
+      imageAltText,
+      detectedColors,
+      detectedLogo,
+    } = body;
 
     if (!textContent) {
       return NextResponse.json({ error: "Text content is required." }, { status: 400 });
@@ -84,6 +93,16 @@ export async function POST(
       return ver;
     });
 
+    const visualInput =
+      imageUrl || imageAltText || detectedColors || detectedLogo
+        ? {
+            imageUrl: imageUrl || null,
+            imageAltText: imageAltText || null,
+            detectedColors: detectedColors || [],
+            detectedLogo: detectedLogo || null,
+          }
+        : undefined;
+
     // 4. Run verification engine on the new version
     const verification = await verifyContent({
       contentVersionId: newVersion.id,
@@ -94,6 +113,7 @@ export async function POST(
       userName: submitter.name,
       userRole: submitter.role,
       forceDeterministicOnly: Boolean(forceDeterministicOnly),
+      visualInput,
     });
 
     return NextResponse.json({

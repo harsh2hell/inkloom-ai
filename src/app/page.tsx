@@ -37,7 +37,13 @@ export default function Home() {
     try {
       const storedUserId = typeof window !== "undefined" ? localStorage.getItem("inkloom_active_user_id") : null;
       const url = storedUserId ? `/api/auth/current-user?userId=${storedUserId}` : "/api/auth/current-user";
-      const r = await fetch(url);
+      
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 8000);
+      
+      const r = await fetch(url, { signal: controller.signal });
+      clearTimeout(timeoutId);
+
       if (!r.ok) {
         throw new Error(`Failed to load user accounts (HTTP ${r.status})`);
       }
@@ -50,7 +56,11 @@ export default function Home() {
       }
     } catch (e: any) {
       console.error("Could not fetch users", e);
-      setUserError(e.message || "Unable to reach user authentication API");
+      if (e.name === "AbortError") {
+        setUserError("PostgreSQL connection timed out (server waking). Please click Retry Connection.");
+      } else {
+        setUserError(e.message || "Unable to reach user authentication API");
+      }
     } finally {
       setUserLoading(false);
     }

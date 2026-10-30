@@ -10,6 +10,5 @@ export const prisma =
     log: process.env.NODE_ENV === "development" ? ["warn", "error"] : ["error"],
   });
 
-if (process.env.NODE_ENV !== "production") {
-  globalForPrisma.prisma = prisma;
-}
+// Always preserve client reference across lambda invocations in serverless environments
+globalForPrisma.prisma = prisma;

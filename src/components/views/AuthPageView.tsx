@@ -14,6 +14,7 @@ import {
   Lock,
   Shield,
   Layers,
+  Crown,
 } from "lucide-react";
 import { UserProfile } from "@/components/Navbar";
 
@@ -42,6 +43,14 @@ export const AuthPageView: React.FC<AuthPageViewProps> = ({
   const [loginEmail, setLoginEmail] = useState("");
 
   const roleOptions = [
+    {
+      id: "BRAND_OWNER",
+      title: "Brand Owner / Executive Sponsor",
+      desc: "Ultimate brand governance authority. Approves content, manages Truth Rules, and issues final publication clearances.",
+      icon: Crown,
+      color: "text-indigo-700 bg-indigo-50 border-indigo-200",
+      pill: "Executive",
+    },
     {
       id: "BRAND_ADMIN",
       title: "Brand Content Admin",

@@ -17,7 +17,7 @@ export interface PermissionCheckResult {
 /**
  * Checks if a user is permitted to approve a specific content version.
  * Rule: Creators cannot approve their own content.
- * Only Brand Admins can approve content, provided they did not author it.
+ * Only Brand Owner and Brand Admins can approve content, provided they did not author it.
  */
 export function canApproveContent(
   user: UserContext,
@@ -33,7 +33,7 @@ export function canApproveContent(
   if (user.role === Role.AGENCY_CREATOR || user.role === Role.EXTERNAL_CREATOR) {
     return {
       allowed: false,
-      reason: "Creators cannot approve content. Only an authorized Brand Admin/Reviewer may approve.",
+      reason: "Creators cannot approve content. Only an authorized Brand Admin/Reviewer or Brand Owner may approve.",
     };
   }
 
@@ -44,7 +44,7 @@ export function canApproveContent(
     };
   }
 
-  if (user.role === Role.BRAND_ADMIN) {
+  if (user.role === Role.BRAND_OWNER || user.role === Role.BRAND_ADMIN) {
     return { allowed: true };
   }
 
@@ -56,15 +56,15 @@ export function canApproveContent(
 
 /**
  * Checks if a user can override findings or resolve pending policy exceptions.
- * Only Brand Admins can perform overrides.
+ * Only Brand Owner and Brand Admins can perform overrides.
  */
 export function canOverrideFindings(user: UserContext): PermissionCheckResult {
-  if (user.role === Role.BRAND_ADMIN) {
+  if (user.role === Role.BRAND_OWNER || user.role === Role.BRAND_ADMIN) {
     return { allowed: true };
   }
   return {
     allowed: false,
-    reason: "Only authorized Brand Reviewers (Brand Admin) can override policy findings.",
+    reason: "Only authorized Brand Reviewers (Brand Owner / Brand Admin) can override policy findings.",
   };
 }
 
@@ -72,12 +72,42 @@ export function canOverrideFindings(user: UserContext): PermissionCheckResult {
  * Checks if a user can generate a creator brief from approved content.
  */
 export function canGenerateBrief(user: UserContext): PermissionCheckResult {
-  if (user.role === Role.BRAND_ADMIN || user.role === Role.AGENCY_CREATOR) {
+  if (
+    user.role === Role.BRAND_OWNER ||
+    user.role === Role.BRAND_ADMIN ||
+    user.role === Role.AGENCY_CREATOR
+  ) {
     return { allowed: true };
   }
   return {
     allowed: false,
     reason: "External Creators and Auditors cannot generate creator briefs.",
+  };
+}
+
+/**
+ * Checks if a user can confirm final publication clearance for a creator submission.
+ */
+export function canClearBrief(user: UserContext): PermissionCheckResult {
+  if (user.role === Role.BRAND_OWNER || user.role === Role.BRAND_ADMIN) {
+    return { allowed: true };
+  }
+  return {
+    allowed: false,
+    reason: "Only authorized Brand Reviewers (Brand Owner / Brand Admin) can confirm final clearance for publication.",
+  };
+}
+
+/**
+ * Checks if a user can create or update Knowledge Centre items.
+ */
+export function canManageKnowledge(user: UserContext): PermissionCheckResult {
+  if (user.role === Role.BRAND_OWNER || user.role === Role.BRAND_ADMIN) {
+    return { allowed: true };
+  }
+  return {
+    allowed: false,
+    reason: "Only authorized Brand Reviewers (Brand Owner / Brand Admin) can create or update Knowledge Centre items.",
   };
 }
 

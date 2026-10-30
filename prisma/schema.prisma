@@ -11,6 +11,7 @@ datasource db {
 }
 
 enum Role {
+  BRAND_OWNER       // Brand Owner / Executive Sponsor - full governance authority & policy clearance
   BRAND_ADMIN       // Brand Admin / Reviewer - can review, approve, override
   AGENCY_CREATOR    // Agency Creator - submits brand content, cannot self-approve
   EXTERNAL_CREATOR  // External Creator - receives briefs, submits adapted captions
@@ -24,6 +25,7 @@ enum KnowledgeCategory {
   GUIDELINE
   TERMINOLOGY
   MANDATORY_DISCLOSURE
+  ASSET
 }
 
 enum ApprovalStatus {
@@ -166,6 +168,9 @@ model ContentVersion {
   submittedBy    User           @relation("VersionSubmitter", fields: [submittedById], references: [id])
   changeNotes    String?
   status         ContentStatus  @default(SUBMITTED)
+  imageUrl       String?        // Attached media asset URL
+  imageAltText   String?        // Alt text provided for image asset
+  imageAnalysis  String?        @db.Text // JSON summary of visual inspection (alt-text, logo, brand-colours)
   createdAt      DateTime       @default(now())
 
   analysisRuns   AnalysisRun[]
@@ -205,6 +210,8 @@ model Finding {
   quotedExcerpt               String?          @db.Text
   citationValid               Boolean          @default(false)
   citationFailureReason       String?
+  insufficientEvidenceSubReason String?        // "Coverage gap" | "Partial or conflicting" | "Unverified citation"
+  routedReviewer              String?          // Named human reviewer assigned e.g. "Sarah Chen (Brand Admin)"
   suggestedCorrection         String?          @db.Text
   suggestedCorrectionSupported Boolean         @default(false)
   resolutionStatus            ResolutionStatus @default(OPEN)
@@ -244,6 +251,7 @@ model CreatorBrief {
   mandatoryDisclosures  String              @db.Text // JSON string of disclosures
   approvedFacts         String              @db.Text // JSON string of facts
   guidelines            String              @db.Text // JSON string of guidelines
+  approvedAssets        String?             @db.Text // JSON string of approved brand assets (logo, brand colors, images)
   createdAt             DateTime            @default(now())
 
   creatorSubmissions    CreatorSubmission[]
@@ -262,6 +270,11 @@ model CreatorSubmission {
   caption              String        @db.Text
   status               ContentStatus @default(SUBMITTED)
   adaptationDriftFlags String?       @db.Text // JSON string of drift findings
+  clearedById          String?       // Named human confirming clearance before publication
+  clearedByName        String?       // e.g. "Sarah Chen" / "Elena Vance"
+  clearedAt            DateTime?     // Timestamp when clearance confirmed
+  clearanceStatus      String?       @default("PENDING_CLEARANCE") // PENDING_CLEARANCE, CLEARED, CHANGES_REQUESTED
+  clearanceNotes       String?       @db.Text
   createdAt            DateTime      @default(now())
   updatedAt            DateTime      @updatedAt
 

@@ -300,6 +300,31 @@ describe("Inkloom AI — 14 Critical Acceptance Tests", () => {
     // Authorized Brand Admin approving someone else's submitted content
     const validApproval = canApproveContent(adminUser, "usr_creator_01");
     expect(validApproval.allowed).toBe(true);
+
+    const ownerUser: UserContext = {
+      id: "usr_owner_01",
+      name: "Elena Vance",
+      email: "elena@verdanta.demo",
+      role: Role.BRAND_OWNER,
+      organization: "Verdanta Executive",
+    };
+
+    const auditorUser: UserContext = {
+      id: "usr_auditor_01",
+      name: "David Thorne",
+      email: "david@compliance.demo",
+      role: Role.AUDITOR,
+      organization: "Global Standards",
+    };
+
+    // Brand Owner approving someone else's submitted content
+    const ownerApproval = canApproveContent(ownerUser, "usr_creator_01");
+    expect(ownerApproval.allowed).toBe(true);
+
+    // Auditor attempting to approve content -> blocked
+    const auditorApproval = canApproveContent(auditorUser, "usr_creator_01");
+    expect(auditorApproval.allowed).toBe(false);
+    expect(auditorApproval.reason).toContain("Auditor role has read-only permissions");
   });
 
   // Acceptance Test 11: Editing content creates a new version and preserves the prior analysis

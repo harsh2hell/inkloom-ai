@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { checkBriefAdaptationDrift } from "@/lib/briefs/generator";
-import { canSubmitCreatorContent, UserContext } from "@/lib/auth/roles";
+import { canSubmitCreatorContent, canClearBrief, UserContext } from "@/lib/auth/roles";
 import { ContentStatus } from "@prisma/client";
 
 export async function POST(
@@ -87,6 +87,80 @@ export async function POST(
       submission,
       driftResult,
     });
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+}
+
+export async function PATCH(
+  req: NextRequest,
+  context: { params: Promise<{ id: string }> }
+) {
+  try {
+    const params = await context.params;
+    const { id: briefId } = params;
+    const body = await req.json();
+    const { submissionId, reviewerId, decision, notes } = body;
+
+    const reviewer = await prisma.user.findUnique({
+      where: { id: reviewerId },
+    });
+
+    if (!reviewer) {
+      return NextResponse.json({ error: "Reviewer user not found." }, { status: 400 });
+    }
+
+    const reviewerContext: UserContext = {
+      id: reviewer.id,
+      name: reviewer.name,
+      email: reviewer.email,
+      role: reviewer.role,
+      organization: reviewer.organization,
+    };
+
+    const perm = canClearBrief(reviewerContext);
+    if (!perm.allowed) {
+      return NextResponse.json({ error: perm.reason }, { status: 403 });
+    }
+
+    const clearanceStatus = decision === "CLEARED" ? "CLEARED" : "CHANGES_REQUESTED";
+
+    const updated = await prisma.creatorSubmission.update({
+      where: { id: submissionId },
+      data: {
+        clearanceStatus,
+        clearedById: reviewer.id,
+        clearedByName: reviewer.name,
+        clearedAt: new Date(),
+        clearanceNotes:
+          notes ||
+          (decision === "CLEARED"
+            ? "Final publication clearance approved by human reviewer."
+            : "Revisions requested by human reviewer prior to publication."),
+        status: decision === "CLEARED" ? ContentStatus.APPROVED : ContentStatus.CHANGES_REQUESTED,
+      },
+      include: { creator: true },
+    });
+
+    await prisma.auditLog.create({
+      data: {
+        action: decision === "CLEARED" ? "CREATOR_FINAL_CLEARED" : "CREATOR_CLEARANCE_REJECTED",
+        userId: reviewer.id,
+        userName: reviewer.name,
+        userRole: reviewer.role,
+        entityType: "CREATOR_SUBMISSION",
+        entityId: submissionId,
+        details: JSON.stringify({
+          briefId,
+          submissionId,
+          reviewerName: reviewer.name,
+          decision: clearanceStatus,
+          notes,
+        }),
+      },
+    });
+
+    return NextResponse.json({ submission: updated, success: true });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }

@@ -2,6 +2,7 @@ import { prisma } from "../prisma";
 import { runDeterministicChecks } from "./deterministic";
 import { GeminiAIProvider, AIProvider } from "../ai/provider";
 import { validateFindingCitation, KnowledgeItemData, ValidatedFindingResult, RawFindingInput } from "./citation";
+import { runVisualChecks, VisualCheckInput } from "../intake/visual";
 import { FindingType, FindingSeverity, EvidenceStatus, ResolutionStatus } from "@prisma/client";
 
 export interface VerificationOptions {
@@ -13,6 +14,7 @@ export interface VerificationOptions {
   userName?: string;
   userRole?: string;
   forceDeterministicOnly?: boolean;
+  visualInput?: VisualCheckInput;
 }
 
 export interface VerificationResult {
@@ -77,6 +79,27 @@ export async function verifyContent(options: VerificationOptions): Promise<Verif
     knowledgeItems,
   });
 
+  // Visual Asset Check Layer (KB-VER-010 Brand Asset Compliance)
+  let visualFindings: RawFindingInput[] = [];
+  if (options.visualInput) {
+    const visualResult = runVisualChecks(options.visualInput);
+    visualFindings = visualResult.findings;
+
+    // Persist visual check result on the content version
+    if (contentVersionId) {
+      await prisma.contentVersion
+        .update({
+          where: { id: contentVersionId },
+          data: {
+            imageUrl: options.visualInput.imageUrl || null,
+            imageAltText: options.visualInput.imageAltText || null,
+            imageAnalysis: JSON.stringify(visualResult),
+          },
+        })
+        .catch((e) => console.warn("Could not update imageAnalysis on ContentVersion:", e));
+    }
+  }
+
   // 3. Layer 2: AI-Assisted Semantic Analysis (if available & enabled)
   let aiRawFindings: RawFindingInput[] = [];
   let providerUsed = "DETERMINISTIC_ONLY";
@@ -100,7 +123,7 @@ export async function verifyContent(options: VerificationOptions): Promise<Verif
   }
 
   // 4. Combine raw candidate findings (deduplicating overlapping affected text)
-  const allRawFindings: RawFindingInput[] = [...deterministicRawFindings];
+  const allRawFindings: RawFindingInput[] = [...deterministicRawFindings, ...visualFindings];
 
   for (const aiFinding of aiRawFindings) {
     // Avoid exact duplicate triggers already caught by deterministic rules
@@ -155,6 +178,8 @@ export async function verifyContent(options: VerificationOptions): Promise<Verif
           quotedExcerpt: f.quotedExcerpt,
           citationValid: f.citationValid,
           citationFailureReason: f.citationFailureReason,
+          insufficientEvidenceSubReason: f.insufficientEvidenceSubReason || null,
+          routedReviewer: f.routedReviewer || null,
           suggestedCorrection: f.suggestedCorrection,
           suggestedCorrectionSupported: f.suggestedCorrectionSupported,
           resolutionStatus: ResolutionStatus.OPEN,
