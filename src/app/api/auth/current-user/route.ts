@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { ensureDatabaseSchema } from "@/lib/db/migrate";
 
 export async function GET(req: NextRequest) {
   try {
+    await ensureDatabaseSchema();
     const { searchParams } = new URL(req.url);
     const userId = searchParams.get("userId") || "usr_admin_01";
 

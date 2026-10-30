@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { ensureDatabaseSchema } from "@/lib/db/migrate";
 import { GoogleGenAI } from "@google/genai";
 
 
@@ -44,6 +45,7 @@ export async function GET() {
     ]);
     health.database.reachable = true;
     health.database.latencyMs = Date.now() - dbStart;
+    await ensureDatabaseSchema();
   } catch (err: any) {
     health.database.reachable = false;
     health.database.error = err?.message || "Database connection error";

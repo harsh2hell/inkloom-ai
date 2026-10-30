@@ -1,9 +1,11 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { ensureDatabaseSchema } from "@/lib/db/migrate";
 import { FindingType, ContentStatus, FindingSeverity, ApprovalStatus } from "@prisma/client";
 
 export async function GET(req: Request) {
   try {
+    await ensureDatabaseSchema();
     const { searchParams } = new URL(req.url);
     const userId = searchParams.get("userId");
     const role = searchParams.get("role");
