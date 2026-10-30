@@ -147,3 +147,4 @@ export function runVisualChecks(input: VisualCheckInput): VisualCheckResult {
     summary,
   };
 }
+
