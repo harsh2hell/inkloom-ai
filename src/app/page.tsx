@@ -30,8 +30,8 @@ export default function Home() {
   const [refreshKey, setRefreshKey] = useState(0);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
-  // Fetch initial users from PostgreSQL
-  const fetchUsers = async (isRetry = false) => {
+  // Fetch initial users from PostgreSQL with serverless cold-start resilience
+  const fetchUsers = async (retryCount = 0) => {
     setUserLoading(true);
     setUserError(null);
     try {
@@ -39,7 +39,8 @@ export default function Home() {
       const url = storedUserId ? `/api/auth/current-user?userId=${storedUserId}` : "/api/auth/current-user";
       
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 15000);
+      // Serverless databases (Neon/Supabase) can take 20s to wake up on cold start
+      const timeoutId = setTimeout(() => controller.abort(), 30000);
       
       const r = await fetch(url, { signal: controller.signal });
       clearTimeout(timeoutId);
@@ -58,9 +59,9 @@ export default function Home() {
       }
     } catch (e: any) {
       console.error("Could not fetch users", e);
-      if (!isRetry) {
-        // Silent automatic retry on cold start latency
-        setTimeout(() => fetchUsers(true), 600);
+      if (retryCount < 2) {
+        // Progressive automatic retry for serverless waking delay
+        setTimeout(() => fetchUsers(retryCount + 1), 1200);
         return;
       }
       if (e.name === "AbortError") {
@@ -113,28 +114,28 @@ export default function Home() {
 
   if (userLoading) {
     return (
-      <div className="min-h-screen bg-[#e8edf4] flex flex-col items-center justify-center p-6 text-slate-500">
-        <div className="w-9 h-9 border-3 border-indigo-600 border-t-transparent rounded-full animate-spin mb-3"></div>
-        <p className="text-xs font-semibold text-slate-700">Connecting to PostgreSQL & verifying auth personas...</p>
+      <div className="min-h-screen bg-[#000000] flex flex-col items-center justify-center p-6 text-zinc-500 font-mono">
+        <div className="w-8 h-8 border-2 border-white/20 border-t-emerald-400 rounded-full animate-spin mb-3"></div>
+        <p className="text-xs font-mono text-zinc-400">{"// CONNECTING_TO_POSTGRESQL_AND_AUTH_PERSONAS..."}</p>
       </div>
     );
   }
 
   if (userError) {
     return (
-      <div className="min-h-screen bg-[#e8edf4] flex flex-col items-center justify-center p-6 text-slate-600">
-        <div className="max-w-md w-full bg-white p-6 rounded-3xl border border-rose-200 shadow-md text-center space-y-3">
-          <div className="w-12 h-12 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center mx-auto">
+      <div className="min-h-screen bg-[#000000] flex flex-col items-center justify-center p-6 text-zinc-300 font-sans">
+        <div className="max-w-md w-full bg-[#09090b] p-6 rounded-3xl border border-white/[0.08] shadow-2xl text-center space-y-3">
+          <div className="w-12 h-12 rounded-2xl bg-rose-500/10 text-rose-400 border border-rose-500/20 flex items-center justify-center mx-auto">
             <ShieldAlert className="w-6 h-6" />
           </div>
-          <h2 className="text-sm font-bold text-slate-900">Database Authentication Error</h2>
-          <p className="text-xs text-rose-600 font-medium">{userError}</p>
-          <p className="text-[11px] text-slate-400">
+          <h2 className="text-sm font-bold text-white font-mono">{"// DATABASE_AUTHENTICATION_ERROR"}</h2>
+          <p className="text-xs text-rose-400 font-medium">{userError}</p>
+          <p className="text-[11px] text-zinc-500 font-mono">
             Zero mock data enforced: The application will not substitute fake user personas when PostgreSQL is unavailable.
           </p>
           <button
-            onClick={() => fetchUsers(false)}
-            className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-full shadow-xs transition-colors cursor-pointer"
+            onClick={() => fetchUsers(0)}
+            className="px-5 py-2.5 bg-white hover:bg-zinc-200 text-black text-xs font-bold rounded-lg shadow-sm transition-colors cursor-pointer"
           >
             Retry Connection
           </button>
@@ -155,9 +156,9 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f3f4f7] p-2.5 sm:p-4 lg:p-6 flex flex-col items-center justify-start text-slate-900 selection:bg-orange-100 selection:text-orange-950 font-sans">
-      {/* Master Neo-Modern Canvas Frame (matching floating soft-edge card aesthetic) */}
-      <div className="w-full max-w-[1680px] min-h-[94vh] bg-[#f8f9fb] rounded-[32px] sm:rounded-[40px] shadow-[0_20px_60px_rgba(15,23,42,0.05)] border border-white p-3 sm:p-5 flex flex-col lg:flex-row gap-5 relative">
+    <div className="min-h-screen bg-[#000000] p-2.5 sm:p-4 lg:p-6 flex flex-col items-center justify-start text-zinc-100 selection:bg-white selection:text-black font-sans">
+      {/* Master Canvas Frame (matching Fluxora obsidian aesthetic) */}
+      <div className="w-full max-w-[1680px] min-h-[94vh] bg-[#050507] rounded-[32px] sm:rounded-[40px] shadow-[0_20px_70px_rgba(0,0,0,0.85)] border border-white/[0.06] p-3 sm:p-5 flex flex-col lg:flex-row gap-5 relative">
         {/* 1. Left Vertical Icon Dock Rail */}
         <Sidebar
           activeTab={activeTab}
