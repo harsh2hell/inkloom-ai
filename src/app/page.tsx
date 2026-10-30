@@ -31,7 +31,7 @@ export default function Home() {
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
   // Fetch initial users from PostgreSQL
-  const fetchUsers = async () => {
+  const fetchUsers = async (isRetry = false) => {
     setUserLoading(true);
     setUserError(null);
     try {
@@ -39,7 +39,7 @@ export default function Home() {
       const url = storedUserId ? `/api/auth/current-user?userId=${storedUserId}` : "/api/auth/current-user";
       
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 8000);
+      const timeoutId = setTimeout(() => controller.abort(), 15000);
       
       const r = await fetch(url, { signal: controller.signal });
       clearTimeout(timeoutId);
@@ -51,17 +51,23 @@ export default function Home() {
       if (data.availableUsers && data.availableUsers.length > 0) {
         setAvailableUsers(data.availableUsers);
         setCurrentUser(data.currentUser || data.availableUsers[0]);
+        setUserLoading(false);
+        return;
       } else {
         throw new Error("No user records returned from PostgreSQL.");
       }
     } catch (e: any) {
       console.error("Could not fetch users", e);
+      if (!isRetry) {
+        // Silent automatic retry on cold start latency
+        setTimeout(() => fetchUsers(true), 600);
+        return;
+      }
       if (e.name === "AbortError") {
         setUserError("PostgreSQL connection timed out (server waking). Please click Retry Connection.");
       } else {
         setUserError(e.message || "Unable to reach user authentication API");
       }
-    } finally {
       setUserLoading(false);
     }
   };
@@ -127,7 +133,7 @@ export default function Home() {
             Zero mock data enforced: The application will not substitute fake user personas when PostgreSQL is unavailable.
           </p>
           <button
-            onClick={fetchUsers}
+            onClick={() => fetchUsers(false)}
             className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-full shadow-xs transition-colors cursor-pointer"
           >
             Retry Connection

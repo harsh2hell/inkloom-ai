@@ -5,6 +5,22 @@ let isMigrated = false;
 export async function ensureDatabaseSchema() {
   if (isMigrated) return;
 
+  // Fast-path: Check if already migrated and seeded
+  try {
+    const owner = await prisma.user.findUnique({
+      where: { id: "usr_owner_01" },
+      select: { id: true },
+    });
+    if (owner) {
+      isMigrated = true;
+      return;
+    }
+  } catch {
+    // Column or enum missing, proceed with DDL below
+  }
+
+  isMigrated = true;
+
   const ddlStatements = [
     `ALTER TYPE "Role" ADD VALUE IF NOT EXISTS 'BRAND_OWNER';`,
     `ALTER TYPE "KnowledgeCategory" ADD VALUE IF NOT EXISTS 'ASSET';`,
