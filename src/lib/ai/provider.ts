@@ -108,18 +108,45 @@ ${textContent}
 
 Analyze the draft now. Output JSON array only.`;
 
-      // Call Gemini 3.8 Flash with a strict timeout
-      const response = await Promise.race([
-        client.interactions.create({
-          model: "gemini-3.8-flash",
-          input: `${systemPrompt}\n\n${userPrompt}`,
-        }),
-        new Promise<never>((_, reject) =>
-          setTimeout(() => reject(new Error("Gemini API request timed out after 12s")), 12000)
-        ),
-      ]);
-
-      const rawText = response.output_text?.trim() || "";
+      let rawText = "";
+      
+      // Robust model invocation: attempts gemini-2.5-flash, falls back to gemini-2.0-flash / interactions
+      try {
+        const response = await Promise.race([
+          client.models.generateContent({
+            model: "gemini-2.5-flash",
+            contents: userPrompt,
+            config: {
+              systemInstruction: systemPrompt,
+              responseMimeType: "application/json",
+            },
+          }),
+          new Promise<never>((_, reject) =>
+            setTimeout(() => reject(new Error("Gemini API request timed out after 12s")), 12000)
+          ),
+        ]);
+        rawText = response.text?.trim() || "";
+      } catch (errGen: any) {
+        console.warn("Primary gemini-2.5-flash attempt failed, trying fallback:", errGen?.message || errGen);
+        try {
+          const fallbackResp = await client.models.generateContent({
+            model: "gemini-2.0-flash",
+            contents: userPrompt,
+            config: {
+              systemInstruction: systemPrompt,
+              responseMimeType: "application/json",
+            },
+          });
+          rawText = fallbackResp.text?.trim() || "";
+        } catch (err2: any) {
+          console.warn("Secondary gemini-2.0-flash failed, attempting interactions fallback:", err2?.message || err2);
+          const intResp: any = await client.interactions.create({
+            model: "gemini-2.5-flash",
+            input: `${systemPrompt}\n\n${userPrompt}`,
+          });
+          rawText = intResp.output_text?.trim() || "";
+        }
+      }
       if (!rawText) {
         return {
           success: false,

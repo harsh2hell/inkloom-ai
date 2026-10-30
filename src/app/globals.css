@@ -197,6 +197,18 @@ body {
   border-color: rgba(255, 255, 255, 0.1) !important;
 }
 
+/* Modals, Overlays, Dialogs, and Popups in Dark Mode */
+[data-theme="dark"] .fixed .bg-white,
+.dark .fixed .bg-white,
+[data-theme="dark"] .modal .bg-white,
+.dark .modal .bg-white,
+[data-theme="dark"] [role="dialog"] .bg-white,
+.dark [role="dialog"] .bg-white {
+  background-color: #0d1117 !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  color: #f4f4f5 !important;
+}
+
 /* Table Headings & Dividers in Dark Mode */
 [data-theme="dark"] thead.bg-slate-50\/80,
 [data-theme="dark"] thead,
