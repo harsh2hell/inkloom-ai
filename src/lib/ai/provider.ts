@@ -110,41 +110,43 @@ Analyze the draft now. Output JSON array only.`;
 
       let rawText = "";
       
-      // Robust model invocation: attempts gemini-2.5-flash, falls back to gemini-2.0-flash / interactions
-      try {
-        const response = await Promise.race([
-          client.models.generateContent({
-            model: "gemini-2.5-flash",
-            contents: userPrompt,
-            config: {
-              systemInstruction: systemPrompt,
-              responseMimeType: "application/json",
-            },
-          }),
-          new Promise<never>((_, reject) =>
-            setTimeout(() => reject(new Error("Gemini API request timed out after 12s")), 12000)
-          ),
-        ]);
-        rawText = response.text?.trim() || "";
-      } catch (errGen: any) {
-        console.warn("Primary gemini-2.5-flash attempt failed, trying fallback:", errGen?.message || errGen);
+      // Candidate models in precedence order: lightning-fast gemini-3.5-flash-lite, gemini-3.5-flash, gemini-3.8-flash
+      const candidateModels = ["gemini-3.5-flash-lite", "gemini-3.5-flash", "gemini-3.8-flash"];
+      
+      for (const model of candidateModels) {
         try {
-          const fallbackResp = await client.models.generateContent({
-            model: "gemini-2.0-flash",
-            contents: userPrompt,
-            config: {
-              systemInstruction: systemPrompt,
-              responseMimeType: "application/json",
-            },
-          });
-          rawText = fallbackResp.text?.trim() || "";
-        } catch (err2: any) {
-          console.warn("Secondary gemini-2.0-flash failed, attempting interactions fallback:", err2?.message || err2);
+          const response = await Promise.race([
+            client.models.generateContent({
+              model,
+              contents: userPrompt,
+              config: {
+                systemInstruction: systemPrompt,
+                responseMimeType: "application/json",
+              },
+            }),
+            new Promise<never>((_, reject) =>
+              setTimeout(() => reject(new Error(`Model ${model} timed out after 6s`)), 6000)
+            ),
+          ]);
+          rawText = response.text?.trim() || "";
+          if (rawText) {
+            break;
+          }
+        } catch (errGen: any) {
+          console.warn(`Gemini invocation with ${model} failed:`, errGen?.message || errGen);
+        }
+      }
+
+      // Final fallback to Interactions API if generateContent didn't return output
+      if (!rawText) {
+        try {
           const intResp: any = await client.interactions.create({
-            model: "gemini-2.5-flash",
+            model: "gemini-3.5-flash-lite",
             input: `${systemPrompt}\n\n${userPrompt}`,
           });
           rawText = intResp.output_text?.trim() || "";
+        } catch (errInt: any) {
+          console.warn("Interactions API fallback failed:", errInt?.message || errInt);
         }
       }
       if (!rawText) {

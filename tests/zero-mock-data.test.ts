@@ -263,9 +263,14 @@ describe("Inkloom AI — Zero Mock Data Enforcement Sprint Verification", () => 
 
     expect(health.database.reachable).toBe(true);
     expect(health.database.latencyMs).toBeGreaterThanOrEqual(0);
-    // Since GEMINI_API_KEY is not configured in this test env, it must truthfully report DETERMINISTIC_ONLY
-    expect(health.ai.mode).toBe("DETERMINISTIC_ONLY");
-    expect(health.ai.configured).toBe(false);
+    // Health truthfully reflects configured status
+    if (isConfigured) {
+      expect(health.ai.mode).toBe("AI_ASSISTED");
+      expect(health.ai.configured).toBe(true);
+    } else {
+      expect(health.ai.mode).toBe("DETERMINISTIC_ONLY");
+      expect(health.ai.configured).toBe(false);
+    }
   });
 
   // Test 12: A complete content submission-to-approval workflow still works
