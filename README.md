@@ -148,6 +148,10 @@ flowchart TD
 | **Visual Asset Analysis** | Alt-text presence and quality auditing, logo URL verification, brand color palette hex checking. | ✅ Fully Implemented |
 | **Two-Layer Check Engine** | Deterministic AST regex rules + Gemini AI layer (`@google/genai`). | ✅ Fully Implemented |
 | **Correction Studio** | Side-by-side editor, 1-click apply, diff comparison (v1 vs v2), version history retention. | ✅ Fully Implemented |
+| **Claim Risk & Confidence Heatmap** | Interactive token-level visual heatmap differentiating contradictions, evidence gaps, and grounded facts. | ✅ Fully Implemented |
+| **Cryptographic Clearance Certificate** | SHA-256 tamper-proof digest & printable export certificate with digital QR verification seal. | ✅ Fully Implemented |
+| **Multi-Region Regulatory Engine** | Real-time statutory checks for US (FDA/FTC), Europe (EFSA), India (FSSAI), and Canada (CFIA). | ✅ Fully Implemented |
+| **AI Grounded Rewrite Studio** | Generates 3 compliant brand voices (Legal-Safe, Growth, Creator Hook) powered by Gemini Flash. | ✅ Fully Implemented |
 | **Human Review Workflow** | Creator self-approval restriction, written override justifications, publication clearance gate. | ✅ Fully Implemented |
 | **Creator Briefs** | Direct brief compilation from approved content + final adaptation verification. | ✅ Fully Implemented |
 | **Governance Dashboard** | Recurring violations, evidence gap tracker, override patterns, guideline-clarity flags. | ✅ Fully Implemented |

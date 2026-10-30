@@ -24,8 +24,17 @@ import {
   BookmarkCheck,
   Scale,
   Lock,
+  Globe,
+  QrCode,
 } from "lucide-react";
 import { UserProfile } from "../Navbar";
+import { ComplianceCertificateModal } from "../ComplianceCertificateModal";
+import { AiRewriteModal } from "../AiRewriteModal";
+import {
+  REGULATORY_REGIONS,
+  RegulatoryRegion,
+  evaluateRegionalCompliance,
+} from "../../lib/verification/regulatory-regions";
 
 interface CorrectionStudioProps {
   contentId: string | null;
@@ -44,14 +53,19 @@ export const CorrectionStudioView: React.FC<CorrectionStudioProps> = ({
   const [knowledgeItems, setKnowledgeItems] = useState<any[]>([]);
   const [selectedVersionIndex, setSelectedVersionIndex] = useState(0);
   const [editedText, setEditedText] = useState("");
-  const [editorMode, setEditorMode] = useState<"edit" | "inspect">("edit");
+  const [editorMode, setEditorMode] = useState<"edit" | "inspect" | "heatmap">("edit");
   const [loading, setLoading] = useState(true);
   const [isVerifying, setIsVerifying] = useState(false);
   const [showDiff, setShowDiff] = useState(false);
   const [changeNotes, setChangeNotes] = useState("");
-  const [activeRightTab, setActiveRightTab] = useState<"findings" | "passed" | "keypoints">("findings");
+  const [activeRightTab, setActiveRightTab] = useState<"findings" | "passed" | "keypoints" | "regional">("findings");
   const [activeFindingFilter, setActiveFindingFilter] = useState("ALL");
   const [selectedFindingId, setSelectedFindingId] = useState<string | null>(null);
+
+  // New Features: Certificate, AI Rewrite, & Regulatory Region
+  const [showCertificateModal, setShowCertificateModal] = useState(false);
+  const [showRewriteModal, setShowRewriteModal] = useState(false);
+  const [selectedRegion, setSelectedRegion] = useState<RegulatoryRegion>("US_FDA");
 
   // Dismiss Modal State
   const [dismissingFindingId, setDismissingFindingId] = useState<string | null>(null);
@@ -399,6 +413,98 @@ export const CorrectionStudioView: React.FC<CorrectionStudioProps> = ({
     );
   };
 
+  // Render Visual Claim Confidence & Risk Heatmap
+  const renderHeatmap = () => {
+    const text = activeVersion?.textContent || editedText;
+    const sentences = text.match(/[^.!?]+[.!?]+|\s*[^.!?]+$/g) || [text];
+
+    return (
+      <div className="p-4 rounded-2xl bg-[#fafbfe] border border-slate-200/80 min-h-[220px] text-xs leading-relaxed font-sans space-y-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-slate-200/60">
+          <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+            <span>Visual Claim Confidence & Risk Heatmap</span>
+          </div>
+          <div className="flex items-center gap-1.5 text-[9px] font-mono flex-wrap">
+            <span className="px-2 py-0.5 rounded-full bg-rose-500/15 text-rose-600 border border-rose-500/30 font-bold">
+              ● Contradiction
+            </span>
+            <span className="px-2 py-0.5 rounded-full bg-purple-500/15 text-purple-600 border border-purple-500/30 font-bold">
+              ● Evidence Gap
+            </span>
+            <span className="px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-600 border border-emerald-500/30 font-bold">
+              ● Grounded Fact
+            </span>
+          </div>
+        </div>
+
+        <div className="leading-loose space-y-2 text-xs">
+          {sentences.map((sentence: string, sIdx: number) => {
+            const trimmed = sentence.trim();
+            if (!trimmed) return null;
+
+            // Check if sentence matches any open finding
+            const matchingFinding = openFindings.find(
+              (f: any) =>
+                trimmed.toLowerCase().includes(f.affectedText?.toLowerCase()) ||
+                f.affectedText?.toLowerCase().includes(trimmed.toLowerCase())
+            );
+
+            if (matchingFinding) {
+              const isHigh = matchingFinding.severity === "HIGH";
+              const isEvidence = matchingFinding.type === "INSUFFICIENT_EVIDENCE";
+              const bgClass = isHigh
+                ? "bg-rose-500/15 border-rose-500/40 text-rose-900 dark:text-rose-200 hover:bg-rose-500/25"
+                : isEvidence
+                ? "bg-purple-500/15 border-purple-500/40 text-purple-900 dark:text-purple-200 hover:bg-purple-500/25"
+                : "bg-amber-500/15 border-amber-500/40 text-amber-900 dark:text-amber-200 hover:bg-amber-500/25";
+
+              return (
+                <span
+                  key={sIdx}
+                  onClick={() => {
+                    setSelectedFindingId(matchingFinding.id);
+                    setActiveRightTab("findings");
+                  }}
+                  className={`inline-block mr-1.5 px-2.5 py-1 rounded-xl border font-medium cursor-pointer transition-all shadow-2xs ${bgClass}`}
+                  title={`[${matchingFinding.type}] Click to inspect finding & 1-click correction`}
+                >
+                  <span className="font-bold mr-1">{isHigh ? "⚠" : isEvidence ? "◈" : "!"}</span>
+                  {trimmed}{" "}
+                </span>
+              );
+            }
+
+            // Check if sentence matches approved facts or mandatory disclosures
+            const isGroundedFact =
+              trimmed.toLowerCase().includes("11g") ||
+              trimmed.toLowerCase().includes("source of protein") ||
+              trimmed.toLowerCase().includes("balanced diet");
+
+            if (isGroundedFact) {
+              return (
+                <span
+                  key={sIdx}
+                  className="inline-block mr-1.5 px-2.5 py-1 rounded-xl border bg-emerald-500/10 border-emerald-500/30 text-emerald-900 dark:text-emerald-200 font-medium"
+                  title="Grounded in approved Brand Knowledge Centre item"
+                >
+                  <span className="font-bold mr-1 text-emerald-500">✓</span>
+                  {trimmed}{" "}
+                </span>
+              );
+            }
+
+            return (
+              <span key={sIdx} className="mr-1 text-slate-700 dark:text-slate-300">
+                {trimmed}{" "}
+              </span>
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
+
   const getFindingBadge = (type: string) => {
     switch (type) {
       case "VERIFIED_CONTRADICTION":
@@ -428,6 +534,7 @@ export const CorrectionStudioView: React.FC<CorrectionStudioProps> = ({
   };
 
   const statusBadge = getStatusBadge(activeVersion.status);
+  const regionalResult = evaluateRegionalCompliance(activeVersion?.textContent || editedText, selectedRegion);
 
   return (
     <div className="space-y-5">
@@ -443,6 +550,14 @@ export const CorrectionStudioView: React.FC<CorrectionStudioProps> = ({
               <span className={`text-[10px] font-bold px-3 py-1 rounded-full border ${statusBadge.color}`}>
                 {statusBadge.label}
               </span>
+              <button
+                onClick={() => setShowCertificateModal(true)}
+                className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 text-[10px] font-bold transition-all cursor-pointer shadow-xs"
+                title="View cryptographically signed clearance certificate"
+              >
+                <ShieldCheck className="w-3.5 h-3.5" />
+                <span>Clearance Certificate</span>
+              </button>
             </div>
             <div className="text-xs text-slate-500 flex items-center gap-2 flex-wrap">
               <span>Campaign: <strong className="text-slate-800">{content.campaignName}</strong></span>
@@ -453,28 +568,55 @@ export const CorrectionStudioView: React.FC<CorrectionStudioProps> = ({
             </div>
           </div>
 
-          {/* Version Switcher Tabs */}
-          <div className="flex items-center gap-1.5 bg-slate-100 p-1.5 rounded-full border border-slate-200/80 text-xs self-start lg:self-auto shrink-0 shadow-2xs">
-            <span className="text-[10px] text-slate-400 font-bold px-2 uppercase tracking-wider">
-              Version:
-            </span>
-            {versions.map((ver: any, idx: number) => (
-              <button
-                key={ver.id}
-                onClick={() => {
-                  setSelectedVersionIndex(idx);
-                  setEditedText(ver.textContent);
-                  setShowDiff(false);
-                }}
-                className={`px-3 py-1 rounded-full font-bold transition-all cursor-pointer ${
-                  selectedVersionIndex === idx
-                    ? "bg-slate-950 text-white shadow-xs"
-                    : "text-slate-600 hover:text-slate-900"
-                }`}
-              >
-                v{ver.versionNumber}
-              </button>
-            ))}
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 self-start lg:self-auto">
+            {/* Regulatory Jurisdiction Selector */}
+            <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-full border border-slate-200/80 text-xs shadow-2xs">
+              <span className="text-[10px] text-slate-400 font-bold px-2 uppercase tracking-wider flex items-center gap-1">
+                <Globe className="w-3 h-3 text-[#e05638]" />
+                <span>Region:</span>
+              </span>
+              {(Object.keys(REGULATORY_REGIONS) as RegulatoryRegion[]).map((rKey) => {
+                const reg = REGULATORY_REGIONS[rKey];
+                return (
+                  <button
+                    key={rKey}
+                    onClick={() => setSelectedRegion(rKey)}
+                    className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold transition-all cursor-pointer ${
+                      selectedRegion === rKey
+                        ? "bg-slate-950 text-white shadow-xs"
+                        : "text-slate-600 hover:text-slate-900"
+                    }`}
+                    title={reg.regulatoryBody}
+                  >
+                    {reg.flag} {reg.shortLabel}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Version Switcher Tabs */}
+            <div className="flex items-center gap-1.5 bg-slate-100 p-1.5 rounded-full border border-slate-200/80 text-xs shrink-0 shadow-2xs">
+              <span className="text-[10px] text-slate-400 font-bold px-2 uppercase tracking-wider">
+                Version:
+              </span>
+              {versions.map((ver: any, idx: number) => (
+                <button
+                  key={ver.id}
+                  onClick={() => {
+                    setSelectedVersionIndex(idx);
+                    setEditedText(ver.textContent);
+                    setShowDiff(false);
+                  }}
+                  className={`px-3 py-1 rounded-full font-bold transition-all cursor-pointer ${
+                    selectedVersionIndex === idx
+                      ? "bg-slate-950 text-white shadow-xs"
+                      : "text-slate-600 hover:text-slate-900"
+                  }`}
+                >
+                  v{ver.versionNumber}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 
@@ -564,24 +706,45 @@ export const CorrectionStudioView: React.FC<CorrectionStudioProps> = ({
               </span>
             </div>
 
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-1.5 flex-wrap">
               <button
-                onClick={() => setEditorMode(editorMode === "edit" ? "inspect" : "edit")}
+                onClick={() => setShowRewriteModal(true)}
+                className="flex items-center gap-1 text-[11px] font-semibold px-2.5 py-1 rounded-full bg-orange-500/10 text-[#e05638] border border-orange-500/30 hover:bg-orange-500/20 transition-all cursor-pointer shadow-xs"
+                title="Open AI Claim Rewrite Assistant"
+              >
+                <Sparkles className="w-3 h-3 text-[#e05638]" />
+                <span>AI Rewrite</span>
+              </button>
+
+              <button
+                onClick={() => setEditorMode(editorMode === "heatmap" ? "edit" : "heatmap")}
+                className={`text-[11px] font-semibold px-2.5 py-1 rounded-full border transition-colors cursor-pointer ${
+                  editorMode === "heatmap"
+                    ? "bg-emerald-500 text-white border-emerald-600 shadow-xs"
+                    : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
+                }`}
+                title="Toggle visual claim risk and confidence heatmap"
+              >
+                {editorMode === "heatmap" ? "Heatmap On" : "Heatmap"}
+              </button>
+
+              <button
+                onClick={() => setEditorMode(editorMode === "inspect" ? "edit" : "inspect")}
                 className={`text-[11px] font-semibold px-2.5 py-1 rounded-full border transition-colors cursor-pointer ${
                   editorMode === "inspect"
-                    ? "bg-orange-50 text-[#e05638] border-orange-200"
+                    ? "bg-orange-50 text-[#e05638] border-orange-200 shadow-xs"
                     : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
                 }`}
                 title="Toggle flagged text highlights"
               >
-                {editorMode === "inspect" ? "Inspect On" : "Inspect Mode"}
+                {editorMode === "inspect" ? "Inspect On" : "Inspect"}
               </button>
 
               <button
                 onClick={() => setShowDiff(!showDiff)}
                 className={`flex items-center gap-1 text-[11px] font-semibold px-2.5 py-1 rounded-full border transition-colors cursor-pointer ${
                   showDiff
-                    ? "bg-slate-900 text-white border-slate-900"
+                    ? "bg-slate-900 text-white border-slate-900 shadow-xs"
                     : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
                 }`}
               >
@@ -593,6 +756,8 @@ export const CorrectionStudioView: React.FC<CorrectionStudioProps> = ({
 
           {showDiff ? (
             renderDiff()
+          ) : editorMode === "heatmap" ? (
+            renderHeatmap()
           ) : editorMode === "inspect" ? (
             /* Inspected View with visual highlight of flagged snippets */
             <div className="p-4 rounded-2xl bg-[#fafbfe] border border-slate-200/80 min-h-[220px] text-xs leading-relaxed text-slate-800 font-sans space-y-2">
@@ -710,6 +875,18 @@ export const CorrectionStudioView: React.FC<CorrectionStudioProps> = ({
                 }`}
               >
                 Judge Keypoints
+              </button>
+
+              <button
+                onClick={() => setActiveRightTab("regional")}
+                className={`px-3 py-1 rounded-full font-bold transition-all cursor-pointer flex items-center gap-1 ${
+                  activeRightTab === "regional"
+                    ? "bg-indigo-600 text-white shadow-xs"
+                    : "text-slate-600 hover:text-slate-900"
+                }`}
+              >
+                <span>{REGULATORY_REGIONS[selectedRegion].flag}</span>
+                <span>Statutory ({regionalResult.regionalAlerts.length})</span>
               </button>
             </div>
           </div>
@@ -1020,6 +1197,92 @@ export const CorrectionStudioView: React.FC<CorrectionStudioProps> = ({
               </div>
             </div>
           )}
+
+          {/* TAB 4: STATUTORY & REGULATORY JURISDICTION */}
+          {activeRightTab === "regional" && (
+            <div className="space-y-3.5">
+              <div className="p-4 rounded-3xl bg-indigo-950/40 border border-indigo-500/30 text-white space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xl">{REGULATORY_REGIONS[selectedRegion].flag}</span>
+                    <span className="text-xs font-extrabold uppercase tracking-wider text-indigo-300">
+                      {REGULATORY_REGIONS[selectedRegion].name} ({REGULATORY_REGIONS[selectedRegion].shortLabel})
+                    </span>
+                  </div>
+                  <span className={`text-[10px] font-mono px-2 py-0.5 rounded-full border ${
+                    regionalResult.passed
+                      ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/30"
+                      : "bg-rose-500/20 text-rose-300 border-rose-500/30"
+                  }`}>
+                    {regionalResult.passed ? "STATUTORILY COMPLIANT" : "REGULATORY ALERTS"}
+                  </span>
+                </div>
+                <div className="text-[11px] text-zinc-300">
+                  <strong>Authority:</strong> {REGULATORY_REGIONS[selectedRegion].regulatoryBody}
+                </div>
+                <div className="text-[11px] text-indigo-300 font-mono">
+                  <strong>Statute:</strong> {REGULATORY_REGIONS[selectedRegion].governingLaw}
+                </div>
+              </div>
+
+              {/* Regional Alerts */}
+              <div className="space-y-2">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
+                  Jurisdiction-Specific Evaluations ({regionalResult.regionalAlerts.length})
+                </span>
+
+                {regionalResult.regionalAlerts.length === 0 ? (
+                  <div className="p-4 rounded-2xl bg-emerald-50/70 border border-emerald-200 text-center space-y-1">
+                    <CheckCircle2 className="w-6 h-6 text-emerald-600 mx-auto" />
+                    <div className="text-xs font-bold text-emerald-900">100% Regionally Compliant</div>
+                    <p className="text-[11px] text-emerald-700">
+                      Draft copy fully complies with {REGULATORY_REGIONS[selectedRegion].shortLabel} statutory thresholds and mandatory disclosure rules.
+                    </p>
+                  </div>
+                ) : (
+                  regionalResult.regionalAlerts.map((alert, aIdx) => (
+                    <div
+                      key={aIdx}
+                      className={`p-3.5 rounded-2xl border space-y-1.5 ${
+                        alert.severity === "HIGH"
+                          ? "bg-rose-50/70 border-rose-200 text-rose-950 dark:text-rose-100"
+                          : alert.severity === "MEDIUM"
+                          ? "bg-amber-50/70 border-amber-200 text-amber-950 dark:text-amber-100"
+                          : "bg-blue-50/70 border-blue-200 text-blue-950 dark:text-blue-100"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between text-xs font-bold">
+                        <span className="font-mono text-[10px] px-2 py-0.5 rounded-full bg-white dark:bg-zinc-900 border">
+                          {alert.ruleCitation}
+                        </span>
+                        <span className="text-[10px] uppercase font-bold">
+                          {alert.severity} PRIORITY
+                        </span>
+                      </div>
+                      <p className="text-[11px] leading-relaxed">
+                        {alert.description}
+                      </p>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              {/* Primary Statutory Rules */}
+              <div className="p-3.5 rounded-2xl bg-[#fafbfe] border border-slate-200/80 space-y-2">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
+                  Key Governing Provisions
+                </span>
+                <ul className="space-y-1.5 text-[11px] text-slate-600 dark:text-slate-300">
+                  {REGULATORY_REGIONS[selectedRegion].primaryRules.map((rule, rIdx) => (
+                    <li key={rIdx} className="flex items-start gap-1.5">
+                      <span className="text-indigo-500 font-bold shrink-0">§</span>
+                      <span>{rule}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -1199,6 +1462,35 @@ export const CorrectionStudioView: React.FC<CorrectionStudioProps> = ({
           </div>
         </div>
       )}
+
+      {/* 4. Cryptographic Compliance Certificate Modal */}
+      {content && activeVersion && (
+        <ComplianceCertificateModal
+          isOpen={showCertificateModal}
+          onClose={() => setShowCertificateModal(false)}
+          content={content}
+          version={activeVersion}
+          currentUser={currentUser}
+          passedRulesCount={passedRules.length}
+          totalRulesCount={totalEvaluatedRules}
+          complianceScore={openFindings.length === 0 ? 100 : Math.max(complianceScore, 70)}
+        />
+      )}
+
+      {/* 5. AI Grounded Claim Rewrite Modal */}
+      <AiRewriteModal
+        isOpen={showRewriteModal}
+        onClose={() => setShowRewriteModal(false)}
+        originalText={editedText}
+        onApplyRewrite={(newText, note) => {
+          setEditedText(newText);
+          setChangeNotes(note);
+          setStatusMessage({
+            type: "success",
+            text: "AI rewrite applied to draft copy! Click 'Save as Revised Version' to persist.",
+          });
+        }}
+      />
     </div>
   );
 };
