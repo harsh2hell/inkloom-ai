@@ -159,15 +159,18 @@ export default function Home() {
     <div className="min-h-screen bg-[#000000] p-2.5 sm:p-4 lg:p-6 flex flex-col items-center justify-start text-zinc-100 selection:bg-white selection:text-black font-sans">
       {/* Master Canvas Frame (matching Fluxora obsidian aesthetic) */}
       <div className="w-full max-w-[1680px] min-h-[94vh] bg-[#050507] rounded-[32px] sm:rounded-[40px] shadow-[0_20px_70px_rgba(0,0,0,0.85)] border border-white/[0.06] p-3 sm:p-5 flex flex-col lg:flex-row gap-5 relative">
-        {/* 1. Left Vertical Icon Dock Rail */}
+        {/* 1. Left Vertical Sidebar (Fluxora Minimalist Resend-Style) */}
         <Sidebar
           activeTab={activeTab}
           setActiveTab={setActiveTab}
           currentUser={currentUser}
+          availableUsers={availableUsers}
+          onSelectUser={handleSelectUser}
           isOpen={isMobileSidebarOpen}
           onClose={() => setIsMobileSidebarOpen(false)}
           aiMode="AI_ASSISTED"
           onSignOut={handleSignOut}
+          onOpenSubmitModal={() => setActiveTab("submit")}
         />
 
         {/* 2. Main Canvas Body */}

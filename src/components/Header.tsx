@@ -72,10 +72,10 @@ export const Header: React.FC<HeaderProps> = ({
     <header className="w-full flex items-center justify-between gap-4 py-2 px-1 relative">
       {/* Top Left: Menu Button + White Monogram Logo + Dashboard Title (matching Fluxora) */}
       <div className="flex items-center gap-3">
-        {/* Menu Pill Button */}
+        {/* Menu Pill Button (Mobile / Tablet drawer trigger) */}
         <button
           onClick={onOpenSidebar}
-          className="w-10 h-10 rounded-full bg-white/[0.04] border border-white/[0.08] shadow-2xs flex items-center justify-center text-zinc-300 hover:text-white hover:bg-white/[0.08] transition-colors cursor-pointer"
+          className="w-10 h-10 rounded-full bg-white/[0.04] border border-white/[0.08] shadow-2xs flex items-center justify-center text-zinc-300 hover:text-white hover:bg-white/[0.08] transition-colors cursor-pointer lg:hidden"
           aria-label="Toggle navigation menu"
         >
           <Menu className="w-4 h-4" />
